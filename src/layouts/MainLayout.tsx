@@ -6,7 +6,7 @@ import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 
 export function MainLayout(): JSX.Element {
-  const collapsed = useUIStore((s) => s.sidebarCollapsed);
+  useUIStore((s) => s.sidebarCollapsed);
 
   return (
     <div className="flex h-full bg-surface-50 dark:bg-surface-950">

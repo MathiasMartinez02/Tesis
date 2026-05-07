@@ -2,12 +2,13 @@ import { BarChart3, Download, FileText, TrendingUp, PieChart } from 'lucide-reac
 import { motion } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart as RPieChart, Pie, Cell, Legend,
+  LineChart, Line, Cell,
 } from 'recharts';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
-import { MOCK_DASHBOARD_DATA } from '@/mocks/dashboard.mock';
+import { Spinner } from '@/shared/components/ui/Spinner';
+import { useAircraftStatusReport } from '../hooks/useReports';
 
 const lineData = [
   { mes: 'Jul', horas: 145 },
@@ -26,7 +27,24 @@ const REPORT_TEMPLATES = [
   { id: 'inventory', title: 'Inventario Pañol', description: 'Movimientos y stock actual del pañol', icon: PieChart },
 ];
 
+const STATUS_COLORS: Record<string, string> = {
+  Operativa: '#10b981',
+  EnMantenimiento: '#3b82f6',
+  EnInspeccion: '#8b5cf6',
+  FueraDeServicio: '#ef4444',
+};
+
 export function ReportsPage(): JSX.Element {
+  const { data: aircraftReport, isLoading: isLoadingAircraft } = useAircraftStatusReport();
+
+  const aircraftChartData = aircraftReport
+    ? Object.entries(aircraftReport.byStatus).map(([status, count]) => ({
+        name: status,
+        value: count,
+        color: STATUS_COLORS[status] ?? '#64748b',
+      }))
+    : [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -108,29 +126,35 @@ export function ReportsPage(): JSX.Element {
           </div>
         </Card>
 
-        {/* Tipos de inspección */}
+        {/* Estado de flota */}
         <Card padding="none">
           <div className="p-5">
             <CardHeader>
-              <CardTitle>Inspecciones por Tipo</CardTitle>
+              <CardTitle>Estado de Flota</CardTitle>
             </CardHeader>
             <CardBody>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={MOCK_DASHBOARD_DATA.inspectionTypes} layout="vertical" barSize={16}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 12, fill: '#64748b' }} tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={80} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
-                    formatter={(v: number) => [v, 'Inspecciones']}
-                  />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {MOCK_DASHBOARD_DATA.inspectionTypes.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {isLoadingAircraft ? (
+                <div className="flex h-[220px] items-center justify-center">
+                  <Spinner size="md" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={aircraftChartData} layout="vertical" barSize={16}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 12, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={100} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                      formatter={(v: number) => [v, 'Aeronaves']}
+                    />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                      {aircraftChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardBody>
           </div>
         </Card>

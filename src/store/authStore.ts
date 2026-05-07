@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { AuthUser, AuthTokens } from '@/types';
+import { ROLE_PERMISSIONS } from '@/constants';
 import { ENV } from '@/config/env';
+
+const STORE_VERSION = 2;
 
 interface AuthStore {
   user: AuthUser | null;
@@ -51,12 +54,14 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'sigma-auth',
+      version: STORE_VERSION,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         tokens: state.tokens,
         isAuthenticated: state.isAuthenticated,
       }),
+      migrate: () => ({ user: null, tokens: null, isAuthenticated: false, isLoading: false }),
     }
   )
 );
@@ -65,4 +70,20 @@ export const useAuthStore = create<AuthStore>()(
 export const selectUser = (state: AuthStore): AuthUser | null => state.user;
 export const selectIsAuthenticated = (state: AuthStore): boolean => state.isAuthenticated;
 export const selectUserRole = (state: AuthStore) => state.user?.role;
-export const selectUserPermissions = (state: AuthStore) => state.user?.permissions;
+
+/**
+ * Devuelve los permisos efectivos del usuario.
+ * Si el backend no envió permisos (sesión antigua o datos corruptos),
+ * los deriva del rol usando ROLE_PERMISSIONS como fallback.
+ */
+export const selectUserPermissions = (state: AuthStore) => {
+  const user = state.user;
+  if (!user) return null;
+  const stored = user.permissions;
+  // Si no hay permisos almacenados o todos son false (sesión stale), usar ROLE_PERMISSIONS
+  const hasAnyPermission = stored && Object.values(stored).some(Boolean);
+  if (!hasAnyPermission) {
+    return ROLE_PERMISSIONS[user.role] ?? stored;
+  }
+  return stored;
+};

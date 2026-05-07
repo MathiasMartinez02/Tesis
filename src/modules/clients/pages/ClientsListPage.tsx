@@ -5,9 +5,11 @@ import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
-import { MOCK_CLIENTS } from '@/mocks/clients.mock';
+import { Spinner } from '@/shared/components/ui/Spinner';
+import { useClients } from '../hooks/useClients';
+import type { Client, ClientFilters } from '@/types';
 
-function ClientCard({ client }: { client: (typeof MOCK_CLIENTS)[number] }): JSX.Element {
+function ClientCard({ client }: { client: Client }): JSX.Element {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -53,13 +55,18 @@ function ClientCard({ client }: { client: (typeof MOCK_CLIENTS)[number] }): JSX.
 
 export function ClientsListPage(): JSX.Element {
   const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<ClientFilters>({});
 
-  const filtered = MOCK_CLIENTS.filter(
-    (c) =>
-      !search ||
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.taxId.includes(search)
-  );
+  const { data: result, isLoading } = useClients(filters, 1, 50);
+  const clients = result?.data ?? [];
+
+  const filtered = search
+    ? clients.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.taxId.includes(search)
+      )
+    : clients;
 
   return (
     <motion.div
@@ -70,7 +77,7 @@ export function ClientsListPage(): JSX.Element {
     >
       <PageHeader
         title="Clientes"
-        description={`${MOCK_CLIENTS.length} clientes registrados`}
+        description={`${result?.total ?? 0} clientes registrados`}
         actions={
           <Button size="sm" leftIcon={<Plus size={15} />}>
             Nuevo cliente
@@ -80,12 +87,19 @@ export function ClientsListPage(): JSX.Element {
 
       <SearchInput
         value={search}
-        onChange={setSearch}
+        onChange={(v) => {
+          setSearch(v);
+          setFilters((f) => ({ ...f, search: v || undefined }));
+        }}
         placeholder="Buscar por nombre o CUIT..."
         className="w-72"
       />
 
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="flex h-40 items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={Users}
           title="Sin clientes"

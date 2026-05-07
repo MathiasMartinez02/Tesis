@@ -17,7 +17,6 @@ export const MOCK_CLIENTS: Client[] = [
     totalWorkOrders: 24,
     isActive: true,
     createdAt: '2022-03-15T10:00:00Z',
-    updatedAt: '2024-01-10T14:00:00Z',
   },
   {
     id: 'cli-002',
@@ -34,7 +33,6 @@ export const MOCK_CLIENTS: Client[] = [
     totalWorkOrders: 18,
     isActive: true,
     createdAt: '2022-08-01T10:00:00Z',
-    updatedAt: '2024-01-12T11:00:00Z',
   },
   {
     id: 'cli-003',
@@ -51,7 +49,6 @@ export const MOCK_CLIENTS: Client[] = [
     totalWorkOrders: 9,
     isActive: true,
     createdAt: '2023-02-10T10:00:00Z',
-    updatedAt: '2024-01-14T09:00:00Z',
   },
   {
     id: 'cli-004',
@@ -67,6 +64,5 @@ export const MOCK_CLIENTS: Client[] = [
     totalWorkOrders: 15,
     isActive: true,
     createdAt: '2022-11-20T10:00:00Z',
-    updatedAt: '2024-01-02T16:00:00Z',
   },
 ];

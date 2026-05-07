@@ -1,4 +1,15 @@
-import type { Aircraft, AircraftFilters, PaginatedResponse } from '@/types';
+import type {
+  Aircraft,
+  AircraftDetail,
+  AircraftFilters,
+  AircraftComponent,
+  AircraftDocument,
+  FlightRecord,
+  CreateAircraftPayload,
+  CreateFlightRecordPayload,
+  ApiResponse,
+  PaginatedResult,
+} from '@/types';
 import { MOCK_AIRCRAFT } from '@/mocks/aircraft.mock';
 import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
@@ -8,7 +19,7 @@ export const aircraftService = {
     filters: AircraftFilters = {},
     page = 1,
     pageSize = 10
-  ): Promise<PaginatedResponse<Aircraft>> {
+  ): Promise<PaginatedResult<Aircraft>> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));
 
@@ -37,20 +48,74 @@ export const aircraftService = {
       };
     }
 
-    const { data } = await apiClient.get<PaginatedResponse<Aircraft>>('/aircraft', {
+    const { data } = await apiClient.get<ApiResponse<PaginatedResult<Aircraft>>>('/aircraft', {
       params: { ...filters, page, pageSize },
     });
-    return data;
+
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar aeronaves');
+    return data.data;
   },
 
-  async getById(id: string): Promise<Aircraft> {
+  async getById(id: string): Promise<AircraftDetail> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 300));
       const aircraft = MOCK_AIRCRAFT.find((a) => a.id === id);
       if (!aircraft) throw new Error('Aeronave no encontrada');
-      return aircraft;
+      return { ...aircraft, documents: [], flightHistory: [], components: [] };
     }
-    const { data } = await apiClient.get<Aircraft>(`/aircraft/${id}`);
-    return data;
+
+    const { data } = await apiClient.get<ApiResponse<AircraftDetail>>(`/aircraft/${id}`);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Aeronave no encontrada');
+    return data.data;
+  },
+
+  async create(payload: CreateAircraftPayload): Promise<Aircraft> {
+    const { data } = await apiClient.post<ApiResponse<Aircraft>>('/aircraft', payload);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al crear aeronave');
+    return data.data;
+  },
+
+  async updateStatus(id: string, status: Aircraft['status']): Promise<void> {
+    const { data } = await apiClient.patch<ApiResponse<null>>(`/aircraft/${id}/status`, { status });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar estado');
+  },
+
+  async addFlightRecord(id: string, payload: CreateFlightRecordPayload): Promise<FlightRecord> {
+    const { data } = await apiClient.post<ApiResponse<FlightRecord>>(
+      `/aircraft/${id}/flight-records`,
+      payload
+    );
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al registrar vuelo');
+    return data.data;
+  },
+
+  async addDocument(
+    id: string,
+    payload: { type: string; name: string; fileUrl: string; expiryDate?: string }
+  ): Promise<AircraftDocument> {
+    const { data } = await apiClient.post<ApiResponse<AircraftDocument>>(
+      `/aircraft/${id}/documents`,
+      payload
+    );
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al subir documento');
+    return data.data;
+  },
+
+  async addComponent(
+    id: string,
+    payload: Omit<AircraftComponent, 'id' | 'status'>
+  ): Promise<AircraftComponent> {
+    const { data } = await apiClient.post<ApiResponse<AircraftComponent>>(
+      `/aircraft/${id}/components`,
+      payload
+    );
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al agregar componente');
+    return data.data;
+  },
+
+  async getMaintenanceHistory(id: string): Promise<unknown[]> {
+    const { data } = await apiClient.get<ApiResponse<unknown[]>>(`/aircraft/${id}/maintenance-history`);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar historial');
+    return data.data;
   },
 };

@@ -5,6 +5,7 @@ import {
   PlusCircle,
   Plane,
   Package,
+  Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn, formatRelativeTime, getInitials } from '@/lib/utils';
@@ -15,10 +16,7 @@ interface ActivityFeedProps {
   activities: RecentActivity[];
 }
 
-const ACTIVITY_CONFIG: Record<
-  RecentActivity['type'],
-  { icon: LucideIcon; color: string; bg: string }
-> = {
+const ACTIVITY_CONFIG: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
   work_order_created: { icon: PlusCircle, color: 'text-blue-600', bg: 'bg-blue-100' },
   work_order_completed: { icon: ClipboardCheck, color: 'text-emerald-600', bg: 'bg-emerald-100' },
   inspection_approved: { icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100' },
@@ -26,6 +24,8 @@ const ACTIVITY_CONFIG: Record<
   aircraft_added: { icon: Plane, color: 'text-aviation-600', bg: 'bg-aviation-100' },
   part_requested: { icon: Package, color: 'text-amber-600', bg: 'bg-amber-100' },
 };
+
+const DEFAULT_ACTIVITY_CONFIG = { icon: Activity, color: 'text-surface-500', bg: 'bg-surface-100' };
 
 export function ActivityFeed({ activities }: ActivityFeedProps): JSX.Element {
   return (
@@ -37,7 +37,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps): JSX.Element {
         <CardBody>
           <ol className="space-y-4" aria-label="Actividad reciente">
             {activities.map((activity) => {
-              const config = ACTIVITY_CONFIG[activity.type];
+              const config = ACTIVITY_CONFIG[activity.type] ?? DEFAULT_ACTIVITY_CONFIG;
               const Icon = config.icon;
               return (
                 <li key={activity.id} className="flex items-start gap-3">

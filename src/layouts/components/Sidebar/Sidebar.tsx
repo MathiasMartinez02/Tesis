@@ -36,40 +36,64 @@ export function Sidebar(): JSX.Element {
       )}
     >
       {/* ── Logo ────────────────────────────────────────────────────── */}
-      <div className="flex h-navbar items-center justify-between border-b border-surface-700/50 px-4">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-aviation">
+      <div
+        className={cn(
+          'flex h-navbar shrink-0 items-center border-b border-surface-700/50',
+          collapsed ? 'justify-center' : 'justify-between px-4'
+        )}
+      >
+        {collapsed ? (
+          /* Estado colapsado: solo ícono centrado, el botón toggle va abajo en el nav */
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-aviation">
             <Plane size={16} className="text-white" />
           </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold tracking-tight text-white">SIGMA</p>
-              <p className="truncate text-2xs text-surface-400">Gestión Aeronáutica</p>
+        ) : (
+          <>
+            <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-aviation">
+                <Plane size={16} className="text-white" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold tracking-tight text-white">SIGMA</p>
+                <p className="truncate text-2xs text-surface-400">Gestión Aeronáutica</p>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Toggle collapse - solo desktop */}
-        <button
-          onClick={toggleSidebar}
-          aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-          className="hidden shrink-0 rounded-md p-1 text-surface-400 transition-colors hover:bg-surface-700 hover:text-white lg:flex"
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+            {/* Toggle collapse - solo desktop */}
+            <button
+              onClick={toggleSidebar}
+              aria-label="Colapsar sidebar"
+              className="hidden shrink-0 rounded-md p-1 text-surface-400 transition-colors hover:bg-surface-700 hover:text-white lg:flex"
+            >
+              <ChevronLeft size={16} />
+            </button>
 
-        {/* Cerrar en mobile */}
-        <button
-          onClick={() => setMobileOpen(false)}
-          aria-label="Cerrar menú"
-          className="shrink-0 rounded-md p-1 text-surface-400 hover:bg-surface-700 hover:text-white lg:hidden"
-        >
-          <X size={18} />
-        </button>
+            {/* Cerrar en mobile */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              aria-label="Cerrar menú"
+              className="shrink-0 rounded-md p-1 text-surface-400 hover:bg-surface-700 hover:text-white lg:hidden"
+            >
+              <X size={18} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* ── Navegación ──────────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-thin" aria-label="Navegación principal">
+        {/* Botón expandir - solo visible en desktop cuando está colapsado */}
+        {collapsed && (
+          <div className="mb-2 hidden px-3 lg:block">
+            <button
+              onClick={toggleSidebar}
+              aria-label="Expandir sidebar"
+              className="flex w-full items-center justify-center rounded-md p-1.5 text-surface-400 transition-colors hover:bg-surface-700 hover:text-white"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
         {NAV_SECTIONS.map((section) => {
           // Filtrar items por permisos
           const visibleItems = section.items.filter((item) => {

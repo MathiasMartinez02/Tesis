@@ -81,11 +81,13 @@ const COLUMNS: TableColumn<WorkOrder>[] = [
     ),
   },
   {
-    key: 'assignedInspectorName',
-    header: 'Inspector',
-    render: (value) => (
+    key: 'taskCount',
+    header: 'Tareas',
+    align: 'right',
+    width: '100px',
+    render: (_, row) => (
       <span className="text-sm text-surface-600 dark:text-surface-400">
-        {value ? String(value) : <span className="text-surface-400 italic">Sin asignar</span>}
+        {row.completedTaskCount}/{row.taskCount}
       </span>
     ),
   },

@@ -15,15 +15,15 @@ import { formatDate, formatFlightHours, daysUntil, cn } from '@/lib/utils';
 import type { Aircraft, AircraftFilters } from '@/types';
 
 const CATEGORY_LABELS = {
-  avion: 'Avión',
-  helicoptero: 'Helicóptero',
-  planeador: 'Planeador',
-  ultraliviano: 'Ultraliviano',
+  Avion: 'Avión',
+  Helicoptero: 'Helicóptero',
+  Planeador: 'Planeador',
+  Ultraliviano: 'Ultraliviano',
 } as const;
 
 function AircraftCard({ aircraft, onClick }: { aircraft: Aircraft; onClick: () => void }): JSX.Element {
-  const daysToInspection = daysUntil(aircraft.nextInspectionDue);
-  const isInspectionUrgent = daysToInspection <= 30;
+  const daysToInspection = aircraft.nextInspectionDue ? daysUntil(aircraft.nextInspectionDue) : null;
+  const isInspectionUrgent = daysToInspection !== null && daysToInspection <= 30;
 
   return (
     <motion.article
@@ -69,13 +69,13 @@ function AircraftCard({ aircraft, onClick }: { aircraft: Aircraft; onClick: () =
             className={cn(
               'mt-0.5 text-sm font-semibold',
               isInspectionUrgent
-                ? daysToInspection < 0
+                ? daysToInspection !== null && daysToInspection < 0
                   ? 'text-red-600'
                   : 'text-amber-600'
                 : 'text-surface-900 dark:text-white'
             )}
           >
-            {formatDate(aircraft.nextInspectionDue)}
+            {aircraft.nextInspectionDue ? formatDate(aircraft.nextInspectionDue) : '—'}
           </p>
         </div>
         <div>
@@ -96,7 +96,7 @@ function AircraftCard({ aircraft, onClick }: { aircraft: Aircraft; onClick: () =
         </div>
       </div>
 
-      {isInspectionUrgent && (
+      {isInspectionUrgent && daysToInspection !== null && (
         <div
           className={cn(
             'mt-3 rounded-lg px-3 py-1.5 text-xs font-medium',

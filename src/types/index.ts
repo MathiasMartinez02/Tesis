@@ -6,4 +6,5 @@ export * from './inventory.types';
 export * from './client.types';
 export * from './user.types';
 export * from './dashboard.types';
+export * from './report.types';
 export * from './common.types';

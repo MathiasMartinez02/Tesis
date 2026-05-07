@@ -1,4 +1,15 @@
-import type { WorkOrder, WorkOrderDetail, WorkOrderFilters, PaginatedResponse } from '@/types';
+import type {
+  WorkOrder,
+  WorkOrderDetail,
+  WorkOrderFilters,
+  WorkOrderTask,
+  WorkOrderTaskStatus,
+  CreateWorkOrderPayload,
+  UpdateWorkOrderPayload,
+  CreateWorkOrderTaskPayload,
+  ApiResponse,
+  PaginatedResult,
+} from '@/types';
 import { MOCK_WORK_ORDERS } from '@/mocks/workOrders.mock';
 import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
@@ -28,7 +39,7 @@ export const workOrdersService = {
     filters: WorkOrderFilters = {},
     page = 1,
     pageSize = 10
-  ): Promise<PaginatedResponse<WorkOrder>> {
+  ): Promise<PaginatedResult<WorkOrder>> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));
       const filtered = applyFilters(MOCK_WORK_ORDERS, filters);
@@ -42,10 +53,11 @@ export const workOrdersService = {
       };
     }
 
-    const { data } = await apiClient.get<PaginatedResponse<WorkOrder>>('/work-orders', {
+    const { data } = await apiClient.get<ApiResponse<PaginatedResult<WorkOrder>>>('/work-orders', {
       params: { ...filters, page, pageSize },
     });
-    return data;
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar órdenes de trabajo');
+    return data.data;
   },
 
   async getById(id: string): Promise<WorkOrderDetail> {
@@ -56,67 +68,88 @@ export const workOrdersService = {
 
       return {
         ...order,
+        tasks: [],
         timeline: [
           {
             id: 'tl-001',
-            workOrderId: id,
             event: 'Orden de trabajo creada',
             description: `OT ${order.number} creada y asignada`,
-            userId: order.createdById,
-            userName: order.createdByName,
-            userRole: 'Jefe de Taller',
+            userId: 'usr-001',
+            userName: 'Carlos Rodríguez',
+            userRole: 'Gerente',
             createdAt: order.createdAt,
-          },
-          {
-            id: 'tl-002',
-            workOrderId: id,
-            event: 'Trabajo iniciado',
-            description: 'Se comenzó con la revisión inicial del motor',
-            userId: 'usr-003',
-            userName: 'Jorge Méndez',
-            userRole: 'Mecánico',
-            createdAt: order.startDate ?? order.createdAt,
           },
         ],
         materials: [],
         documents: [],
+        assignedMechanics: [],
       };
     }
 
-    const { data } = await apiClient.get<WorkOrderDetail>(`/work-orders/${id}`);
-    return data;
+    const { data } = await apiClient.get<ApiResponse<WorkOrderDetail>>(`/work-orders/${id}`);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'OT no encontrada');
+    return data.data;
   },
 
-  async create(payload: Partial<WorkOrder>): Promise<WorkOrder> {
-    if (ENV.ENABLE_MOCK_API) {
-      await new Promise((r) => setTimeout(r, 600));
-      const newOrder: WorkOrder = {
-        ...(payload as WorkOrder),
-        id: `ot-${Date.now()}`,
-        number: `OT-2024-${String(MOCK_WORK_ORDERS.length + 1).padStart(4, '0')}`,
-        status: 'pendiente',
-        actualHours: 0,
-        tasks: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      MOCK_WORK_ORDERS.push(newOrder);
-      return newOrder;
-    }
-    const { data } = await apiClient.post<WorkOrder>('/work-orders', payload);
-    return data;
+  async create(payload: CreateWorkOrderPayload): Promise<WorkOrder> {
+    const { data } = await apiClient.post<ApiResponse<WorkOrder>>('/work-orders', payload);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al crear OT');
+    return data.data;
   },
 
-  async updateStatus(id: string, status: WorkOrder['status']): Promise<WorkOrder> {
+  async update(id: string, payload: UpdateWorkOrderPayload): Promise<void> {
+    const { data } = await apiClient.put<ApiResponse<null>>(`/work-orders/${id}`, payload);
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar OT');
+  },
+
+  async updateStatus(id: string, status: WorkOrder['status']): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 300));
       const order = MOCK_WORK_ORDERS.find((o) => o.id === id);
       if (!order) throw new Error('OT no encontrada');
       order.status = status;
       order.updatedAt = new Date().toISOString();
-      return order;
+      return;
     }
-    const { data } = await apiClient.patch<WorkOrder>(`/work-orders/${id}/status`, { status });
-    return data;
+
+    const { data } = await apiClient.patch<ApiResponse<null>>(`/work-orders/${id}/status`, { status });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Transición de estado inválida');
+  },
+
+  async addTask(id: string, payload: CreateWorkOrderTaskPayload): Promise<WorkOrderTask> {
+    const { data } = await apiClient.post<ApiResponse<WorkOrderTask>>(
+      `/work-orders/${id}/tasks`,
+      payload
+    );
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al agregar tarea');
+    return data.data;
+  },
+
+  async updateTaskStatus(
+    id: string,
+    taskId: string,
+    status: WorkOrderTaskStatus,
+    observations?: string
+  ): Promise<void> {
+    const { data } = await apiClient.patch<ApiResponse<null>>(
+      `/work-orders/${id}/tasks/${taskId}/status`,
+      { status, observations }
+    );
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar tarea');
+  },
+
+  async assignMechanic(id: string, userId: string): Promise<void> {
+    const { data } = await apiClient.post<ApiResponse<null>>(
+      `/work-orders/${id}/mechanics`,
+      { userId }
+    );
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al asignar mecánico');
+  },
+
+  async removeMechanic(id: string, userId: string): Promise<void> {
+    const { data } = await apiClient.delete<ApiResponse<null>>(
+      `/work-orders/${id}/mechanics/${userId}`
+    );
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al desasignar mecánico');
   },
 };

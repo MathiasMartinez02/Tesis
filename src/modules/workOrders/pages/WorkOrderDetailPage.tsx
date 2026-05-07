@@ -10,21 +10,29 @@ import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { useWorkOrder, useUpdateWorkOrderStatus } from '../hooks/useWorkOrders';
 import { WORK_ORDER_TYPE_LABELS, ROUTES } from '@/constants';
 import { formatDate, formatDateTime, formatFlightHours } from '@/lib/utils';
-import type { WorkOrder } from '@/types';
+import type { WorkOrder, WorkOrderTaskStatus } from '@/types';
 
-const TASK_STATUS_LABELS = {
-  pendiente: 'Pendiente',
-  en_proceso: 'En Proceso',
-  completada: 'Completada',
-  observada: 'Con Observaciones',
-} as const;
+const TASK_STATUS_LABELS: Record<WorkOrderTaskStatus, string> = {
+  Pendiente: 'Pendiente',
+  EnProceso: 'En Proceso',
+  Completada: 'Completada',
+  Observada: 'Con Observaciones',
+};
 
-const TASK_STATUS_COLORS = {
-  pendiente: 'bg-gray-100 text-gray-600',
-  en_proceso: 'bg-blue-100 text-blue-700',
-  completada: 'bg-emerald-100 text-emerald-700',
-  observada: 'bg-amber-100 text-amber-700',
-} as const;
+const TASK_STATUS_COLORS: Record<WorkOrderTaskStatus, string> = {
+  Pendiente: 'bg-gray-100 text-gray-600',
+  EnProceso: 'bg-blue-100 text-blue-700',
+  Completada: 'bg-emerald-100 text-emerald-700',
+  Observada: 'bg-amber-100 text-amber-700',
+};
+
+const STATUS_OPTIONS: Array<{ value: WorkOrder['status']; label: string }> = [
+  { value: 'Pendiente', label: 'Pendiente' },
+  { value: 'EnProceso', label: 'En Proceso' },
+  { value: 'EnInspeccion', label: 'En Inspección' },
+  { value: 'Finalizada', label: 'Finalizada' },
+  { value: 'Cancelada', label: 'Cancelada' },
+];
 
 export function WorkOrderDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +51,7 @@ export function WorkOrderDetailPage(): JSX.Element {
     );
   }
 
-  const completedTasks = order.tasks.filter((t) => t.status === 'completada').length;
+  const completedTasks = order.tasks.filter((t) => t.status === 'Completada').length;
   const progress = order.tasks.length > 0
     ? Math.round((completedTasks / order.tasks.length) * 100)
     : 0;
@@ -95,16 +103,15 @@ export function WorkOrderDetailPage(): JSX.Element {
             >
               Cambiar estado
             </Button>
-            {/* Dropdown de estados */}
             <div className="absolute right-0 top-full z-10 mt-1 hidden w-44 rounded-lg border border-surface-200 bg-white py-1 shadow-dropdown group-focus-within:block group-hover:block dark:border-surface-700 dark:bg-surface-800">
-              {(['pendiente', 'en_proceso', 'en_inspeccion', 'finalizada'] as const).map((s) => (
+              {STATUS_OPTIONS.map((opt) => (
                 <button
-                  key={s}
-                  onClick={() => handleStatusChange(s)}
-                  disabled={s === order.status}
+                  key={opt.value}
+                  onClick={() => handleStatusChange(opt.value)}
+                  disabled={opt.value === order.status}
                   className="w-full px-3 py-2 text-left text-sm hover:bg-surface-50 disabled:opacity-40 dark:hover:bg-surface-700"
                 >
-                  {s.replace('_', ' ').replace(/^\w/, (c) => c.toUpperCase())}
+                  {opt.label}
                 </button>
               ))}
             </div>
@@ -136,7 +143,6 @@ export function WorkOrderDetailPage(): JSX.Element {
               </span>
             </CardHeader>
             <CardBody>
-              {/* Progress bar */}
               <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface-100 dark:bg-surface-700">
                 <div
                   className="h-full rounded-full bg-aviation-500 transition-all duration-500"
@@ -253,17 +259,7 @@ export function WorkOrderDetailPage(): JSX.Element {
               <User size={16} className="text-surface-400" />
             </CardHeader>
             <CardBody>
-              {order.assignedInspectorName && (
-                <div className="mb-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-surface-400 mb-1">
-                    Inspector
-                  </p>
-                  <p className="text-sm font-medium text-surface-900 dark:text-white">
-                    {order.assignedInspectorName}
-                  </p>
-                </div>
-              )}
-              {order.assignedMechanics.length > 0 && (
+              {order.assignedMechanics.length > 0 ? (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-surface-400 mb-1">
                     Mecánicos
@@ -277,8 +273,7 @@ export function WorkOrderDetailPage(): JSX.Element {
                     ))}
                   </div>
                 </div>
-              )}
-              {!order.assignedInspectorName && order.assignedMechanics.length === 0 && (
+              ) : (
                 <p className="text-sm text-surface-400 italic">Sin personal asignado</p>
               )}
             </CardBody>

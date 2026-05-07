@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plane, Engine, Clock, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plane, Cog, Clock, Calendar, FileText, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
@@ -25,7 +25,7 @@ export function AircraftDetailPage(): JSX.Element {
     );
   }
 
-  const daysToInspection = daysUntil(aircraft.nextInspectionDue);
+  const daysToInspection = aircraft.nextInspectionDue ? daysUntil(aircraft.nextInspectionDue) : null;
   const daysToCertExpiry = daysUntil(aircraft.certificateExpiry);
 
   return (
@@ -66,15 +66,15 @@ export function AircraftDetailPage(): JSX.Element {
       </div>
 
       {/* Alertas de vencimiento */}
-      {(daysToInspection <= 30 || daysToCertExpiry <= 30) && (
+      {((daysToInspection !== null && daysToInspection <= 30) || daysToCertExpiry <= 30) && (
         <div className="space-y-2">
-          {daysToInspection <= 30 && (
+          {daysToInspection !== null && daysToInspection <= 30 && (
             <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-900/10">
               <AlertTriangle size={16} className="shrink-0 text-amber-600" />
               <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
                 {daysToInspection < 0
                   ? `Inspección vencida hace ${Math.abs(daysToInspection)} días`
-                  : `Próxima inspección en ${daysToInspection} días (${formatDate(aircraft.nextInspectionDue)})`}
+                  : `Próxima inspección en ${daysToInspection} días (${formatDate(aircraft.nextInspectionDue!)})`}
               </p>
             </div>
           )}
@@ -117,7 +117,7 @@ export function AircraftDetailPage(): JSX.Element {
                 </div>
                 <div>
                   <dt className="font-semibold text-surface-400 text-xs uppercase tracking-wide">Categoría</dt>
-                  <dd className="mt-1 text-surface-700 dark:text-surface-300 capitalize">{aircraft.category}</dd>
+                  <dd className="mt-1 text-surface-700 dark:text-surface-300">{aircraft.category}</dd>
                 </div>
                 <div>
                   <dt className="font-semibold text-surface-400 text-xs uppercase tracking-wide">Cliente</dt>
@@ -164,12 +164,18 @@ export function AircraftDetailPage(): JSX.Element {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-surface-400">Próx. insp.</p>
-                    <p className={`mt-1 text-2xl font-bold ${daysToInspection <= 30 ? 'text-amber-600' : 'text-surface-900 dark:text-white'}`}>
+                    <p
+                      className={`mt-1 text-2xl font-bold ${
+                        daysToInspection !== null && daysToInspection <= 30
+                          ? 'text-amber-600'
+                          : 'text-surface-900 dark:text-white'
+                      }`}
+                    >
                       {aircraft.nextInspectionHours}h
                     </p>
                   </div>
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50">
-                    <Engine size={18} className="text-purple-600" />
+                    <Cog size={18} className="text-purple-600" />
                   </div>
                 </div>
               </CardBody>
@@ -187,30 +193,48 @@ export function AircraftDetailPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <dl className="space-y-3 text-sm">
-                <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-surface-400">
-                    Última inspección
-                  </dt>
-                  <dd className="mt-0.5 text-surface-700 dark:text-surface-300">
-                    {formatDate(aircraft.lastInspectionDate)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-surface-400">
-                    Próxima inspección
-                  </dt>
-                  <dd className={`mt-0.5 font-medium ${daysToInspection <= 30 ? 'text-amber-600' : 'text-surface-900 dark:text-white'}`}>
-                    {formatDate(aircraft.nextInspectionDue)}
-                    <span className="ml-1 text-xs font-normal text-surface-500">
-                      ({daysToInspection > 0 ? `en ${daysToInspection} días` : 'VENCIDA'})
-                    </span>
-                  </dd>
-                </div>
+                {aircraft.lastInspectionDate && (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-surface-400">
+                      Última inspección
+                    </dt>
+                    <dd className="mt-0.5 text-surface-700 dark:text-surface-300">
+                      {formatDate(aircraft.lastInspectionDate)}
+                    </dd>
+                  </div>
+                )}
+                {aircraft.nextInspectionDue && (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-surface-400">
+                      Próxima inspección
+                    </dt>
+                    <dd
+                      className={`mt-0.5 font-medium ${
+                        daysToInspection !== null && daysToInspection <= 30
+                          ? 'text-amber-600'
+                          : 'text-surface-900 dark:text-white'
+                      }`}
+                    >
+                      {formatDate(aircraft.nextInspectionDue)}
+                      {daysToInspection !== null && (
+                        <span className="ml-1 text-xs font-normal text-surface-500">
+                          ({daysToInspection > 0 ? `en ${daysToInspection} días` : 'VENCIDA'})
+                        </span>
+                      )}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-surface-400">
                     Cert. aeronavegabilidad
                   </dt>
-                  <dd className={`mt-0.5 font-medium ${daysToCertExpiry <= 30 ? 'text-red-600' : 'text-surface-900 dark:text-white'}`}>
+                  <dd
+                    className={`mt-0.5 font-medium ${
+                      daysToCertExpiry <= 30
+                        ? 'text-red-600'
+                        : 'text-surface-900 dark:text-white'
+                    }`}
+                  >
                     {formatDate(aircraft.certificateExpiry)}
                   </dd>
                 </div>

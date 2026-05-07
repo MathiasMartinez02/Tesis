@@ -1,25 +1,30 @@
 export type WorkOrderStatus =
-  | 'pendiente'
-  | 'en_proceso'
-  | 'en_inspeccion'
-  | 'finalizada'
-  | 'cancelada';
+  | 'Pendiente'
+  | 'EnProceso'
+  | 'EnInspeccion'
+  | 'Finalizada'
+  | 'Cancelada';
 
-export type WorkOrderPriority = 'baja' | 'media' | 'alta' | 'critica';
+export type WorkOrderPriority = 'Baja' | 'Media' | 'Alta' | 'Critica';
 
 export type WorkOrderType =
-  | 'inspeccion_50h'
-  | 'inspeccion_100h'
-  | 'inspeccion_200h'
-  | 'inspeccion_anual'
-  | 'reparacion'
-  | 'modificacion'
-  | 'ad_cumplimiento'
-  | 'servicio';
+  | 'Inspeccion50h'
+  | 'Inspeccion100h'
+  | 'Inspeccion200h'
+  | 'InspeccionAnual'
+  | 'Reparacion'
+  | 'Modificacion'
+  | 'AdCumplimiento'
+  | 'Servicio';
 
+export type WorkOrderTaskStatus = 'Pendiente' | 'EnProceso' | 'Completada' | 'Observada';
+
+export type WorkOrderMaterialStatus = 'Pendiente' | 'Entregado' | 'NoDisponible';
+
+/** WorkOrderDto — lo que devuelve el listado (GET /work-orders) */
 export interface WorkOrder {
   id: string;
-  number: string; // OT-2024-0001
+  number: string;
   type: WorkOrderType;
   status: WorkOrderStatus;
   priority: WorkOrderPriority;
@@ -29,20 +34,16 @@ export interface WorkOrder {
   clientId: string;
   clientName: string;
   description: string;
-  assignedMechanics: AssignedMechanic[];
-  assignedInspectorId?: string;
-  assignedInspectorName?: string;
   estimatedHours: number;
   actualHours: number;
   startDate?: string;
   estimatedEndDate: string;
   completedDate?: string;
   aircraftHoursAtStart: number;
-  tasks: WorkOrderTask[];
+  taskCount: number;
+  completedTaskCount: number;
   createdAt: string;
   updatedAt: string;
-  createdById: string;
-  createdByName: string;
 }
 
 export interface AssignedMechanic {
@@ -54,11 +55,10 @@ export interface AssignedMechanic {
 
 export interface WorkOrderTask {
   id: string;
-  workOrderId: string;
   orderIndex: number;
   title: string;
   description: string;
-  status: 'pendiente' | 'en_proceso' | 'completada' | 'observada';
+  status: WorkOrderTaskStatus;
   assignedToId?: string;
   assignedToName?: string;
   estimatedHours: number;
@@ -67,48 +67,48 @@ export interface WorkOrderTask {
   observations?: string;
   requiresInspection: boolean;
   inspectedById?: string;
+  inspectedByName?: string;
   inspectedAt?: string;
 }
 
 export interface WorkOrderTimeline {
   id: string;
-  workOrderId: string;
   event: string;
   description: string;
   userId: string;
   userName: string;
   userRole: string;
   createdAt: string;
-  metadata?: Record<string, unknown>;
-}
-
-export interface WorkOrderDetail extends WorkOrder {
-  timeline: WorkOrderTimeline[];
-  materials: WorkOrderMaterial[];
-  documents: WorkOrderDocument[];
+  metadata?: string;
 }
 
 export interface WorkOrderMaterial {
   id: string;
-  workOrderId: string;
   partNumber: string;
   description: string;
   quantity: number;
   unit: string;
   requestedAt: string;
   deliveredAt?: string;
-  status: 'pendiente' | 'entregado' | 'no_disponible';
+  status: WorkOrderMaterialStatus;
 }
 
 export interface WorkOrderDocument {
   id: string;
-  workOrderId: string;
   name: string;
   type: string;
   fileUrl: string;
   uploadedById: string;
-  uploadedByName: string;
   uploadedAt: string;
+}
+
+/** WorkOrderDetailDto — lo que devuelve GET /work-orders/{id} */
+export interface WorkOrderDetail extends WorkOrder {
+  tasks: WorkOrderTask[];
+  timeline: WorkOrderTimeline[];
+  materials: WorkOrderMaterial[];
+  documents: WorkOrderDocument[];
+  assignedMechanics: AssignedMechanic[];
 }
 
 export interface WorkOrderFilters {
@@ -121,4 +121,27 @@ export interface WorkOrderFilters {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
+}
+
+export interface CreateWorkOrderPayload {
+  type: WorkOrderType;
+  priority: WorkOrderPriority;
+  aircraftId: string;
+  description: string;
+  estimatedHours: number;
+  estimatedEndDate: string;
+}
+
+export interface UpdateWorkOrderPayload {
+  description: string;
+  estimatedHours: number;
+  estimatedEndDate: string;
+  priority: WorkOrderPriority;
+}
+
+export interface CreateWorkOrderTaskPayload {
+  title: string;
+  description: string;
+  estimatedHours: number;
+  requiresInspection: boolean;
 }

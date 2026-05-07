@@ -1,16 +1,20 @@
 export interface ApiResponse<T> {
-  data: T;
-  message?: string;
   success: boolean;
+  data?: T;
+  message?: string;
+  errors?: string[];
 }
 
-export interface PaginatedResponse<T> {
+export interface PaginatedResult<T> {
   data: T[];
   total: number;
   page: number;
   pageSize: number;
   totalPages: number;
 }
+
+/** Alias para compatibilidad con código existente */
+export type PaginatedResponse<T> = PaginatedResult<T>;
 
 export interface PaginationParams {
   page: number;
