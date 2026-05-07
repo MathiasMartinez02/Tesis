@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply h-full scroll-smooth;
+    font-feature-settings: 'cv01', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply h-full font-sans text-surface-900 dark:text-white;
+  }
+
+  #root {
+    @apply h-full;
+  }
+
+  /* Scrollbar personalizado */
+  ::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-surface-300 dark:bg-surface-600;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-400 dark:bg-surface-500;
+  }
+
+  /* Focus visible */
+  :focus-visible {
+    @apply outline-none ring-2 ring-aviation-400 ring-offset-2;
+  }
+
+  /* Selección de texto */
+  ::selection {
+    @apply bg-aviation-100 text-aviation-900;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.surface.300') transparent;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Animación de esqueleto */
+  .skeleton {
+    @apply animate-pulse rounded-md bg-surface-200 dark:bg-surface-700;
+  }
+}
