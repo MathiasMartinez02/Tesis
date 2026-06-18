@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workOrdersService } from '@/services/api/workOrders.service';
-import type { WorkOrderFilters, WorkOrder, WorkOrderPriority, AssignedMechanic } from '@/types';
+import type {
+  WorkOrderFilters,
+  WorkOrder,
+  WorkOrderPriority,
+  WorkOrderTaskStatus,
+  AssignedMechanic,
+  CreateWorkOrderPayload,
+} from '@/types';
 import { useUIStore } from '@/store/uiStore';
 
 export const WORK_ORDERS_QUERY_KEY = ['work-orders'] as const;
@@ -19,6 +26,30 @@ export function useWorkOrder(id: string) {
     enabled: !!id,
   });
 }
+
+// ─── Create ───────────────────────────────────────────────────────────────────
+
+export function useCreateWorkOrder() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: (payload: CreateWorkOrderPayload) => workOrdersService.create(payload),
+    onSuccess: (newOrder) => {
+      void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
+      addToast({
+        type: 'success',
+        title: 'OT creada',
+        description: `OT ${newOrder.number} creada correctamente`,
+      });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al crear OT', description: err.message });
+    },
+  });
+}
+
+// ─── Update completo (campos + mecánicos diff) ────────────────────────────────
 
 type UpdatePayload = {
   description: string;
@@ -80,21 +111,13 @@ export function useUpdateWorkOrder() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdatePayload }) =>
       workOrdersService.update(id, payload),
-    onSuccess: (updatedOrder) => {
+    onSuccess: (_, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, id] });
       void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
-      addToast({
-        type: 'success',
-        title: 'OT actualizada',
-        description: `${updatedOrder.number} guardada correctamente`,
-        duration: 3000,
-      });
+      addToast({ type: 'success', title: 'OT actualizada' });
     },
-    onError: () => {
-      addToast({
-        type: 'error',
-        title: 'Error al guardar',
-        description: 'No se pudieron guardar los cambios',
-      });
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar OT', description: err.message });
     },
   });
 }
@@ -106,20 +129,61 @@ export function useUpdateWorkOrderStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: WorkOrder['status'] }) =>
       workOrdersService.updateStatus(id, status),
-    onSuccess: (updatedOrder) => {
+    onSuccess: (_, { id }) => {
       void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
-      addToast({
-        type: 'success',
-        title: 'Estado actualizado',
-        description: `OT ${updatedOrder.number} actualizada correctamente`,
-      });
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, id] });
+      addToast({ type: 'success', title: 'Estado actualizado' });
     },
-    onError: () => {
-      addToast({
-        type: 'error',
-        title: 'Error al actualizar',
-        description: 'No se pudo actualizar el estado de la OT',
-      });
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar estado', description: err.message });
+    },
+  });
+}
+
+export function useAddWorkOrderTask() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: { title: string; description: string; estimatedHours: number; requiresInspection: boolean };
+    }) => workOrdersService.addTask(id, payload),
+    onSuccess: (_, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, id] });
+      addToast({ type: 'success', title: 'Tarea agregada' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al agregar tarea', description: err.message });
+    },
+  });
+}
+
+export function useUpdateTaskStatus() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({
+      workOrderId,
+      taskId,
+      status,
+      observations,
+    }: {
+      workOrderId: string;
+      taskId: string;
+      status: WorkOrderTaskStatus;
+      observations?: string;
+    }) => workOrdersService.updateTaskStatus(workOrderId, taskId, status, observations),
+    onSuccess: (_, { workOrderId }) => {
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, workOrderId] });
+      addToast({ type: 'success', title: 'Tarea actualizada' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar tarea', description: err.message });
     },
   });
 }

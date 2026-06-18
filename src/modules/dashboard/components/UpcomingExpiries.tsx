@@ -59,7 +59,8 @@ export function UpcomingExpiries({ expiries }: UpcomingExpiriesProps): JSX.Eleme
         <CardBody>
           <div className="space-y-2">
             {expiries.map((item) => {
-              const styles = PRIORITY_STYLES[item.priority];
+              const priorityKey = item.priority as keyof typeof PRIORITY_STYLES;
+              const styles = PRIORITY_STYLES[priorityKey] ?? PRIORITY_STYLES.normal;
               return (
                 <div
                   key={item.id}
@@ -81,7 +82,7 @@ export function UpcomingExpiries({ expiries }: UpcomingExpiriesProps): JSX.Eleme
                           styles.badge
                         )}
                       >
-                        {TYPE_LABELS[item.type]}
+                        {TYPE_LABELS[item.type as keyof typeof TYPE_LABELS] ?? item.type}
                       </span>
                       <span className="text-2xs text-surface-500">
                         {formatDate(item.dueDate)}

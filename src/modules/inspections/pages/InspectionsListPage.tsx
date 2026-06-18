@@ -8,56 +8,16 @@ import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
-import { buildRoute, ROUTES, INSPECTION_TYPE_LABELS } from '@/constants';
+import { buildRoute, ROUTES } from '@/constants';
 import { formatDate } from '@/lib/utils';
+import { useInspections } from '../hooks/useInspections';
 import type { Inspection, TableColumn } from '@/types';
-
-// Mock inspections basado en los work orders existentes
-const MOCK_INSPECTIONS: Inspection[] = [
-  {
-    id: 'ins-001',
-    workOrderId: 'ot-002',
-    workOrderNumber: 'OT-2024-0002',
-    type: 'inspeccion_anual',
-    status: 'pendiente_aprobacion',
-    aircraftId: 'ac-003',
-    aircraftRegistration: 'LV-BCD',
-    aircraftModel: 'Beechcraft Bonanza G36',
-    aircraftHours: 890,
-    inspectorId: 'usr-002',
-    inspectorName: 'María González',
-    scheduledDate: '2024-01-08',
-    startedAt: '2024-01-08T08:00:00Z',
-    completedAt: '2024-01-14T17:00:00Z',
-    checklist: [],
-    createdAt: '2024-01-05T10:00:00Z',
-    updatedAt: '2024-01-14T17:00:00Z',
-  },
-  {
-    id: 'ins-002',
-    workOrderId: 'ot-001',
-    workOrderNumber: 'OT-2024-0001',
-    type: 'inspeccion_100h',
-    status: 'en_curso',
-    aircraftId: 'ac-002',
-    aircraftRegistration: 'LV-MNP',
-    aircraftModel: 'Piper PA-28-181',
-    aircraftHours: 3421,
-    inspectorId: 'usr-002',
-    inspectorName: 'María González',
-    scheduledDate: '2024-01-12',
-    startedAt: '2024-01-12T08:00:00Z',
-    checklist: [],
-    createdAt: '2024-01-10T09:00:00Z',
-    updatedAt: '2024-01-13T16:00:00Z',
-  },
-];
 
 const COLUMNS: TableColumn<Inspection>[] = [
   {
     key: 'workOrderNumber',
     header: 'N° OT',
-    width: '130px',
+    width: '160px',
     render: (value) => (
       <span className="font-mono text-xs font-semibold text-aviation-600">{String(value)}</span>
     ),
@@ -71,7 +31,7 @@ const COLUMNS: TableColumn<Inspection>[] = [
   {
     key: 'type',
     header: 'Tipo',
-    render: (value) => INSPECTION_TYPE_LABELS[value as Inspection['type']],
+    render: (value) => String(value),
   },
   {
     key: 'aircraftRegistration',
@@ -86,7 +46,12 @@ const COLUMNS: TableColumn<Inspection>[] = [
   {
     key: 'inspectorName',
     header: 'Inspector',
-    render: (value) => value ? String(value) : <span className="text-surface-400 italic text-sm">Sin asignar</span>,
+    render: (value) =>
+      value ? (
+        String(value)
+      ) : (
+        <span className="text-surface-400 italic text-sm">Sin asignar</span>
+      ),
   },
   {
     key: 'scheduledDate',
@@ -107,12 +72,17 @@ const COLUMNS: TableColumn<Inspection>[] = [
 export function InspectionsListPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const { data: result, isLoading } = useInspections({ search }, 1, 50);
 
-  const filtered = MOCK_INSPECTIONS.filter((i) =>
-    !search ||
-    i.aircraftRegistration.toLowerCase().includes(search.toLowerCase()) ||
-    i.workOrderNumber.toLowerCase().includes(search.toLowerCase())
-  );
+  const inspections = result?.data ?? [];
+
+  const filtered = search
+    ? inspections.filter(
+        (i) =>
+          i.aircraftRegistration.toLowerCase().includes(search.toLowerCase()) ||
+          i.workOrderNumber.toLowerCase().includes(search.toLowerCase())
+      )
+    : inspections;
 
   return (
     <motion.div
@@ -140,7 +110,7 @@ export function InspectionsListPage(): JSX.Element {
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {!isLoading && filtered.length === 0 ? (
         <EmptyState
           icon={CheckSquare}
           title="Sin inspecciones"

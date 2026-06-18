@@ -1,10 +1,11 @@
-export type AircraftStatus = 'operativa' | 'en_mantenimiento' | 'fuera_de_servicio' | 'en_inspeccion';
+export type AircraftStatus = 'Operativa' | 'EnMantenimiento' | 'FueraDeServicio' | 'EnInspeccion';
 
-export type AircraftCategory = 'avion' | 'helicoptero' | 'planeador' | 'ultraliviano';
+export type AircraftCategory = 'Avion' | 'Helicoptero' | 'Planeador' | 'Ultraliviano';
 
+/** AircraftDto — lo que devuelve el listado (GET /aircraft) */
 export interface Aircraft {
   id: string;
-  registration: string; // LV-XXXX
+  registration: string;
   model: string;
   manufacturer: string;
   year: number;
@@ -15,27 +16,20 @@ export interface Aircraft {
   engineSerialNumber: string;
   totalFlightHours: number;
   totalLandings: number;
-  lastInspectionDate: string;
-  nextInspectionDue: string;
+  lastInspectionDate?: string;
+  nextInspectionDue?: string;
   nextInspectionHours: number;
   certificateExpiry: string;
+  isCertificateExpiringSoon: boolean;
   clientId: string;
   clientName: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface AircraftDetail extends Aircraft {
-  documents: AircraftDocument[];
-  flightHistory: FlightRecord[];
-  maintenanceHistory: MaintenanceRecord[];
-  components: AircraftComponent[];
-}
-
 export interface AircraftDocument {
   id: string;
-  aircraftId: string;
-  type: 'certificado_aeronavegabilidad' | 'manual_vuelo' | 'log_book' | 'permiso_radio' | 'poliza_seguro' | 'otro';
+  type: string;
   name: string;
   fileUrl: string;
   expiryDate?: string;
@@ -45,9 +39,8 @@ export interface AircraftDocument {
 
 export interface FlightRecord {
   id: string;
-  aircraftId: string;
   date: string;
-  duration: number; // horas
+  duration: number;
   landings: number;
   pilot: string;
   origin: string;
@@ -55,22 +48,8 @@ export interface FlightRecord {
   notes?: string;
 }
 
-export interface MaintenanceRecord {
-  id: string;
-  aircraftId: string;
-  workOrderId: string;
-  type: string;
-  description: string;
-  performedAt: string;
-  performedBy: string;
-  hoursAtMaintenance: number;
-  nextDueHours?: number;
-  nextDueDate?: string;
-}
-
 export interface AircraftComponent {
   id: string;
-  aircraftId: string;
   name: string;
   partNumber: string;
   serialNumber: string;
@@ -78,8 +57,15 @@ export interface AircraftComponent {
   installDate: string;
   installHours: number;
   lifeLimitHours?: number;
-  overhauldueHours?: number;
-  status: 'activo' | 'por_vencer' | 'vencido';
+  overhaulDueHours?: number;
+  status: string;
+}
+
+/** AircraftDetailDto — lo que devuelve GET /aircraft/{id} */
+export interface AircraftDetail extends Aircraft {
+  documents: AircraftDocument[];
+  flightHistory: FlightRecord[];
+  components: AircraftComponent[];
 }
 
 export interface AircraftFilters {
@@ -87,4 +73,32 @@ export interface AircraftFilters {
   category?: AircraftCategory;
   clientId?: string;
   search?: string;
+}
+
+export interface CreateAircraftPayload {
+  registration: string;
+  model: string;
+  manufacturer: string;
+  year: number;
+  category: AircraftCategory;
+  serialNumber: string;
+  engineModel: string;
+  engineSerialNumber: string;
+  totalFlightHours: number;
+  totalLandings: number;
+  lastInspectionDate?: string;
+  nextInspectionDue?: string;
+  nextInspectionHours: number;
+  certificateExpiry: string;
+  clientId: string;
+}
+
+export interface CreateFlightRecordPayload {
+  date: string;
+  duration: number;
+  landings: number;
+  pilot: string;
+  origin: string;
+  destination: string;
+  notes?: string;
 }

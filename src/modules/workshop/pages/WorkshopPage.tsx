@@ -3,14 +3,17 @@ import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
-import { MOCK_WORK_ORDERS } from '@/mocks/workOrders.mock';
+import { useWorkOrders } from '@/modules/workOrders/hooks/useWorkOrders';
 import { formatDate, formatFlightHours } from '@/lib/utils';
 
-const activeOrders = MOCK_WORK_ORDERS.filter(
-  (o) => o.status === 'en_proceso' || o.status === 'pendiente'
-);
-
 export function WorkshopPage(): JSX.Element {
+  const { data: result } = useWorkOrders({ status: 'EnProceso' });
+  const { data: pendingResult } = useWorkOrders({ status: 'Pendiente' });
+
+  const inProgressOrders = result?.data ?? [];
+  const pendingOrders = pendingResult?.data ?? [];
+  const activeOrders = [...inProgressOrders, ...pendingOrders];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -26,9 +29,9 @@ export function WorkshopPage(): JSX.Element {
       {/* Resumen de carga */}
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { label: 'En proceso', count: activeOrders.filter((o) => o.status === 'en_proceso').length, color: 'text-blue-600' },
-          { label: 'Pendientes', count: activeOrders.filter((o) => o.status === 'pendiente').length, color: 'text-amber-600' },
-          { label: 'Mecánicos activos', count: 2, color: 'text-emerald-600' },
+          { label: 'En proceso', count: inProgressOrders.length, color: 'text-blue-600' },
+          { label: 'Pendientes', count: pendingOrders.length, color: 'text-amber-600' },
+          { label: 'Total activas', count: activeOrders.length, color: 'text-emerald-600' },
         ].map((stat) => (
           <Card key={stat.label} padding="sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-surface-400">
@@ -55,9 +58,8 @@ export function WorkshopPage(): JSX.Element {
           ) : (
             <div className="space-y-3">
               {activeOrders.map((order) => {
-                const completedTasks = order.tasks.filter((t) => t.status === 'completada').length;
-                const progress = order.tasks.length > 0
-                  ? Math.round((completedTasks / order.tasks.length) * 100)
+                const progress = order.taskCount > 0
+                  ? Math.round((order.completedTaskCount / order.taskCount) * 100)
                   : 0;
 
                 return (
@@ -88,10 +90,10 @@ export function WorkshopPage(): JSX.Element {
                     </div>
 
                     {/* Progreso de tareas */}
-                    {order.tasks.length > 0 && (
+                    {order.taskCount > 0 && (
                       <div className="mt-3">
                         <div className="mb-1 flex justify-between text-xs text-surface-500">
-                          <span>Tareas: {completedTasks}/{order.tasks.length}</span>
+                          <span>Tareas: {order.completedTaskCount}/{order.taskCount}</span>
                           <span>{progress}%</span>
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-surface-100 dark:bg-surface-700">
@@ -100,21 +102,6 @@ export function WorkshopPage(): JSX.Element {
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                      </div>
-                    )}
-
-                    {/* Mecánicos */}
-                    {order.assignedMechanics.length > 0 && (
-                      <div className="mt-3 flex items-center gap-1.5">
-                        <span className="text-xs text-surface-400">Mecánicos:</span>
-                        {order.assignedMechanics.map((m) => (
-                          <span
-                            key={m.userId}
-                            className="rounded-full bg-surface-100 px-2 py-0.5 text-xs text-surface-700 dark:bg-surface-700 dark:text-surface-300"
-                          >
-                            {m.userName.split(' ')[0]}
-                          </span>
-                        ))}
                       </div>
                     )}
 

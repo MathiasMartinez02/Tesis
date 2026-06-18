@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { ENV } from '@/config/env';
+import type { ApiResponse } from '@/types';
 
 const BASE_URL = ENV.API_BASE_URL;
 
@@ -29,27 +30,37 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && originalRequest && !originalRequest.url?.includes('/auth/login')) {
-      // Token expirado - intentar refresh
+    // No interceptar 401 del propio endpoint de login (evita redirect/loop)
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/login')
+    ) {
+      originalRequest._retry = true;
+
       try {
         const refreshToken = localStorage.getItem('sigma_refresh_token');
         if (!refreshToken) throw new Error('No refresh token');
 
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
+        const { data } = await axios.post<ApiResponse<{ accessToken: string }>>(
+          `${BASE_URL}/auth/refresh`,
+          { refreshToken }
+        );
 
-        localStorage.setItem(ENV.JWT_STORAGE_KEY, data.accessToken as string);
+        if (!data.success || !data.data?.accessToken) throw new Error('Refresh failed');
+
+        const newAccessToken = data.data.accessToken;
+        localStorage.setItem(ENV.JWT_STORAGE_KEY, newAccessToken);
 
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${data.accessToken as string}`;
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
         return apiClient(originalRequest);
       } catch {
-        // Refresh falló - limpiar auth y redirigir a login
         localStorage.removeItem(ENV.JWT_STORAGE_KEY);
         localStorage.removeItem('sigma_refresh_token');
         window.location.href = '/login';

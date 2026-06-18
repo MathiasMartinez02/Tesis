@@ -1,27 +1,28 @@
 import type { UserRole, UserPermissions } from '@/types';
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  gerente: 'Gerente',
-  oficina_tecnica: 'Oficina Técnica',
-  inspector: 'Inspector',
-  jefe_taller: 'Jefe de Taller',
-  mecanico: 'Mecánico',
-  panol: 'Pañolero',
-  administracion: 'Administración',
+  Gerente: 'Gerente',
+  OficinaTecnica: 'Oficina Técnica',
+  Inspector: 'Inspector',
+  JefeTaller: 'Jefe de Taller',
+  Mecanico: 'Mecánico',
+  Panol: 'Pañolero',
+  Administracion: 'Administración',
 };
 
 export const ROLE_COLORS: Record<UserRole, string> = {
-  gerente: 'bg-purple-100 text-purple-800',
-  oficina_tecnica: 'bg-blue-100 text-blue-800',
-  inspector: 'bg-emerald-100 text-emerald-800',
-  jefe_taller: 'bg-orange-100 text-orange-800',
-  mecanico: 'bg-gray-100 text-gray-800',
-  panol: 'bg-yellow-100 text-yellow-800',
-  administracion: 'bg-pink-100 text-pink-800',
+  Gerente: 'bg-purple-100 text-purple-800',
+  OficinaTecnica: 'bg-blue-100 text-blue-800',
+  Inspector: 'bg-emerald-100 text-emerald-800',
+  JefeTaller: 'bg-orange-100 text-orange-800',
+  Mecanico: 'bg-gray-100 text-gray-800',
+  Panol: 'bg-yellow-100 text-yellow-800',
+  Administracion: 'bg-pink-100 text-pink-800',
 };
 
 export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
-  gerente: {
+  // Acceso total al sistema
+  Gerente: {
     canViewDashboard: true,
     canManageWorkOrders: true,
     canApproveInspections: true,
@@ -32,7 +33,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canManageClients: true,
     canSignDocuments: true,
   },
-  oficina_tecnica: {
+  // Planificación técnica: OTs, aeronaves, clientes, reportes
+  OficinaTecnica: {
     canViewDashboard: true,
     canManageWorkOrders: true,
     canApproveInspections: false,
@@ -41,33 +43,36 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewReports: true,
     canManageAircraft: true,
     canManageClients: true,
-    canSignDocuments: false,
+    canSignDocuments: true,
   },
-  inspector: {
+  // Dominio de inspecciones: aprueba, firma y ve OTs y aeronaves como contexto
+  Inspector: {
     canViewDashboard: true,
-    canManageWorkOrders: false,
+    canManageWorkOrders: true,
     canApproveInspections: true,
     canManageInventory: false,
     canManageUsers: false,
     canViewReports: true,
-    canManageAircraft: false,
+    canManageAircraft: true,
     canManageClients: false,
     canSignDocuments: true,
   },
-  jefe_taller: {
+  // Dominio del taller: OTs, inventario, aeronaves y reportes operativos
+  JefeTaller: {
     canViewDashboard: true,
     canManageWorkOrders: true,
     canApproveInspections: false,
     canManageInventory: true,
     canManageUsers: false,
     canViewReports: true,
-    canManageAircraft: false,
+    canManageAircraft: true,
     canManageClients: false,
     canSignDocuments: false,
   },
-  mecanico: {
+  // Ejecuta tareas en el taller: ve y actualiza sus OTs asignadas
+  Mecanico: {
     canViewDashboard: true,
-    canManageWorkOrders: false,
+    canManageWorkOrders: true,
     canApproveInspections: false,
     canManageInventory: false,
     canManageUsers: false,
@@ -76,23 +81,25 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canManageClients: false,
     canSignDocuments: false,
   },
-  panol: {
+  // Dominio del pañol: inventario y sus reportes
+  Panol: {
     canViewDashboard: true,
     canManageWorkOrders: false,
     canApproveInspections: false,
     canManageInventory: true,
     canManageUsers: false,
-    canViewReports: false,
+    canViewReports: true,
     canManageAircraft: false,
     canManageClients: false,
     canSignDocuments: false,
   },
-  administracion: {
+  // Administración: usuarios, clientes y reportes (sin acceso operativo)
+  Administracion: {
     canViewDashboard: true,
     canManageWorkOrders: false,
     canApproveInspections: false,
     canManageInventory: false,
-    canManageUsers: false,
+    canManageUsers: true,
     canViewReports: true,
     canManageAircraft: false,
     canManageClients: true,

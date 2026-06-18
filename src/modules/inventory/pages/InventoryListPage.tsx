@@ -7,22 +7,11 @@ import { Button } from '@/shared/components/ui/Button';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
-import { Card } from '@/shared/components/ui/Card';
 import { KPICard } from '@/shared/components/KPICard/KPICard';
-import { ROUTES } from '@/constants';
-import { MOCK_INVENTORY } from '@/mocks/inventory.mock';
+import { useInventory } from '../hooks/useInventory';
+import { ROUTES, INVENTORY_CATEGORY_LABELS } from '@/constants';
 import { formatCurrency } from '@/lib/utils';
 import type { InventoryItem, TableColumn } from '@/types';
-
-const CATEGORY_LABELS = {
-  repuesto_motor: 'Motor',
-  repuesto_celula: 'Célula',
-  consumible: 'Consumible',
-  herramienta: 'Herramienta',
-  material: 'Material',
-  instrumento: 'Instrumento',
-  avionico: 'Aviónico',
-} as const;
 
 const COLUMNS: TableColumn<InventoryItem>[] = [
   {
@@ -45,8 +34,8 @@ const COLUMNS: TableColumn<InventoryItem>[] = [
   {
     key: 'category',
     header: 'Categoría',
-    width: '120px',
-    render: (value) => CATEGORY_LABELS[value as InventoryItem['category']],
+    width: '140px',
+    render: (value) => INVENTORY_CATEGORY_LABELS[value as InventoryItem['category']],
   },
   {
     key: 'status',
@@ -60,7 +49,11 @@ const COLUMNS: TableColumn<InventoryItem>[] = [
     align: 'right',
     width: '100px',
     render: (value, row) => (
-      <span className={`font-semibold ${Number(value) <= row.minimumStock ? 'text-red-600' : 'text-surface-900 dark:text-white'}`}>
+      <span
+        className={`font-semibold ${
+          Number(value) <= row.minimumStock ? 'text-red-600' : 'text-surface-900 dark:text-white'
+        }`}
+      >
         {String(value)} {row.unit}
       </span>
     ),
@@ -69,7 +62,9 @@ const COLUMNS: TableColumn<InventoryItem>[] = [
     key: 'location',
     header: 'Ubicación',
     render: (value) => (
-      <span className="text-xs font-mono text-surface-600 dark:text-surface-400">{String(value)}</span>
+      <span className="text-xs font-mono text-surface-600 dark:text-surface-400">
+        {String(value)}
+      </span>
     ),
   },
   {
@@ -85,15 +80,20 @@ const COLUMNS: TableColumn<InventoryItem>[] = [
 export function InventoryListPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const { data: result, isLoading } = useInventory({ search }, 1, 50);
 
-  const filtered = MOCK_INVENTORY.filter((item) =>
-    !search ||
-    item.description.toLowerCase().includes(search.toLowerCase()) ||
-    item.partNumber.toLowerCase().includes(search.toLowerCase())
-  );
+  const items = result?.data ?? [];
+  const lowStockCount = items.filter(
+    (i) => i.status === 'BajoStock' || i.status === 'SinStock'
+  ).length;
 
-  const lowStockCount = MOCK_INVENTORY.filter((i) => i.status === 'bajo_stock' || i.status === 'sin_stock').length;
-  const totalValue = MOCK_INVENTORY.reduce((sum, i) => sum + i.totalValue, 0);
+  const filtered = search
+    ? items.filter(
+        (item) =>
+          item.description.toLowerCase().includes(search.toLowerCase()) ||
+          item.partNumber.toLowerCase().includes(search.toLowerCase())
+      )
+    : items;
 
   return (
     <motion.div
@@ -104,7 +104,7 @@ export function InventoryListPage(): JSX.Element {
     >
       <PageHeader
         title="Pañol / Inventario"
-        description={`${MOCK_INVENTORY.length} ítems en el pañol`}
+        description={`${result?.total ?? 0} ítems en el pañol`}
         actions={
           <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.INVENTORY_ITEM_NEW)}>
             Nuevo ítem
@@ -113,10 +113,10 @@ export function InventoryListPage(): JSX.Element {
       />
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <KPICard
           title="Total de ítems"
-          value={MOCK_INVENTORY.length}
+          value={result?.total ?? 0}
           icon={Package}
           iconColor="text-aviation-600"
           iconBg="bg-aviation-50"
@@ -129,13 +129,6 @@ export function InventoryListPage(): JSX.Element {
           iconBg="bg-red-50"
           trendPositive={false}
         />
-        <KPICard
-          title="Valor en inventario"
-          value={formatCurrency(totalValue)}
-          icon={Package}
-          iconColor="text-emerald-600"
-          iconBg="bg-emerald-50"
-        />
       </div>
 
       {/* Alertas */}
@@ -143,7 +136,8 @@ export function InventoryListPage(): JSX.Element {
         <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-900/10">
           <AlertTriangle size={16} className="shrink-0 text-amber-600" />
           <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
-            {lowStockCount} {lowStockCount === 1 ? 'ítem tiene' : 'ítems tienen'} stock bajo o nulo. Revisá las existencias.
+            {lowStockCount} {lowStockCount === 1 ? 'ítem tiene' : 'ítems tienen'} stock bajo o
+            nulo. Revisá las existencias.
           </p>
         </div>
       )}
@@ -159,12 +153,14 @@ export function InventoryListPage(): JSX.Element {
       </div>
 
       {/* Tabla */}
-      <DataTable<InventoryItem>
-        data={filtered}
-        columns={COLUMNS}
-        emptyMessage="Sin ítems en inventario"
-        emptyDescription="No hay ítems que coincidan con la búsqueda."
-      />
+      {!isLoading && (
+        <DataTable<InventoryItem>
+          data={filtered}
+          columns={COLUMNS}
+          emptyMessage="Sin ítems en inventario"
+          emptyDescription="No hay ítems que coincidan con la búsqueda."
+        />
+      )}
     </motion.div>
   );
 }

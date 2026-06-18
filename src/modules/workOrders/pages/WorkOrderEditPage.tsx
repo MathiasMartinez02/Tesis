@@ -19,7 +19,7 @@ import { useUsers } from '@/hooks/useUsers';
 import type { SelectOption, AssignedMechanic } from '@/types';
 
 const editSchema = z.object({
-  priority: z.enum(['baja', 'media', 'alta', 'critica']),
+  priority: z.enum(['Baja', 'Media', 'Alta', 'Critica']),
   description: z.string().min(10, 'Mínimo 10 caracteres'),
   estimatedHours: z.number().min(0.5, 'Mínimo 0.5 horas').max(999),
   estimatedEndDate: z.string().min(1, 'Fecha requerida'),
@@ -41,7 +41,7 @@ export function WorkOrderEditPage(): JSX.Element {
   const { data: usersData } = useUsers({ isActive: true });
   const allPersonnel = usersData?.data ?? [];
   const mechanicPool = allPersonnel.filter(
-    (u) => u.role === 'mecanico' || u.role === 'jefe_taller'
+    (u) => u.role === 'Mecanico' || u.role === 'JefeTaller'
   );
 
   const [mechanics, setMechanics] = useState<AssignedMechanic[]>([]);
@@ -123,8 +123,8 @@ export function WorkOrderEditPage(): JSX.Element {
   );
 
   const ROLE_LABELS: Record<string, string> = {
-    mecanico: 'Mecánico',
-    jefe_taller: 'Jefe de Taller',
+    Mecanico: 'Mecánico',
+    JefeTaller: 'Jefe de Taller',
   };
 
   return (

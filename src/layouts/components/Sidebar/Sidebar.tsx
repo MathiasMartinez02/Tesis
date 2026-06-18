@@ -36,28 +36,37 @@ export function Sidebar(): JSX.Element {
       )}
     >
       {/* ── Logo ────────────────────────────────────────────────────── */}
-      <div className="flex h-navbar items-center justify-between border-b border-surface-700/50 px-3">
-        <div className={cn('flex items-center gap-3 overflow-hidden', collapsed && 'w-full justify-center')}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-aviation">
+      <div
+        className={cn(
+          'flex h-navbar shrink-0 items-center border-b border-surface-700/50',
+          collapsed ? 'justify-center' : 'justify-between px-4'
+        )}
+      >
+        {collapsed ? (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-aviation">
             <Plane size={16} className="text-white" />
           </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold tracking-tight text-white">SIGMA</p>
-              <p className="truncate text-2xs text-surface-400">Gestión Aeronáutica</p>
+        ) : (
+          <>
+            <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-aviation">
+                <Plane size={16} className="text-white" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold tracking-tight text-white">SIGMA</p>
+                <p className="truncate text-2xs text-surface-400">Gestión Aeronáutica</p>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Cerrar en mobile */}
-        {!collapsed && (
-          <button
-            onClick={() => setMobileOpen(false)}
-            aria-label="Cerrar menú"
-            className="shrink-0 rounded-md p-1 text-surface-400 hover:bg-surface-700 hover:text-white lg:hidden"
-          >
-            <X size={18} />
-          </button>
+            {/* Cerrar en mobile */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              aria-label="Cerrar menú"
+              className="shrink-0 rounded-md p-1 text-surface-400 hover:bg-surface-700 hover:text-white lg:hidden"
+            >
+              <X size={18} />
+            </button>
+          </>
         )}
       </div>
 

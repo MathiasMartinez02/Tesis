@@ -1,6 +1,7 @@
+/** KpisDto */
 export interface DashboardKPIs {
   activeWorkOrders: number;
-  activeWorkOrdersDelta: number; // % change from last period
+  activeWorkOrdersDelta: number;
   pendingInspections: number;
   pendingInspectionsDelta: number;
   aircraftInMaintenance: number;
@@ -9,6 +10,7 @@ export interface DashboardKPIs {
   overdueItems: number;
 }
 
+/** WorkOrderChartDto */
 export interface WorkOrderChartData {
   month: string;
   completadas: number;
@@ -16,22 +18,28 @@ export interface WorkOrderChartData {
   pendientes: number;
 }
 
-export interface InspectionTypeData {
+/** ChartItemDto */
+export interface ChartItem {
   name: string;
   value: number;
   color: string;
 }
 
+/** Alias para compatibilidad */
+export type InspectionTypeData = ChartItem;
+
+/** UpcomingExpiryDto */
 export interface UpcomingExpiry {
   id: string;
-  type: 'inspeccion' | 'certificado' | 'componente' | 'licencia';
+  type: string;
   description: string;
   aircraft?: string;
   dueDate: string;
   daysUntilDue: number;
-  priority: 'normal' | 'warning' | 'critical';
+  priority: string;
 }
 
+/** RecentActivityDto */
 export interface RecentActivity {
   id: string;
   type: string;
@@ -44,11 +52,12 @@ export interface RecentActivity {
   createdAt: string;
 }
 
+/** DashboardDto */
 export interface DashboardData {
   kpis: DashboardKPIs;
   workOrderChart: WorkOrderChartData[];
-  inspectionTypes: InspectionTypeData[];
+  inspectionTypes: ChartItem[];
+  aircraftByStatus: ChartItem[];
   upcomingExpiries: UpcomingExpiry[];
   recentActivity: RecentActivity[];
-  aircraftByStatus: { name: string; value: number; color: string }[];
 }

@@ -1,11 +1,11 @@
 export type UserRole =
-  | 'gerente'
-  | 'oficina_tecnica'
-  | 'inspector'
-  | 'jefe_taller'
-  | 'mecanico'
-  | 'panol'
-  | 'administracion';
+  | 'Gerente'
+  | 'OficinaTecnica'
+  | 'Inspector'
+  | 'JefeTaller'
+  | 'Mecanico'
+  | 'Panol'
+  | 'Administracion';
 
 export interface UserPermissions {
   canViewDashboard: boolean;
@@ -53,4 +53,29 @@ export interface AuthState {
 export interface LoginResponse {
   user: AuthUser;
   tokens: AuthTokens;
+}
+
+/** Forma cruda que devuelve el backend en POST /auth/login */
+export interface UserTokenDto {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  permissions: string[];
+  avatarUrl?: string;
+  licenseNumber?: string;
+  isActive: boolean;
+  lastLoginAt?: string;
+}
+
+export interface TokensDto {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+export interface LoginResponseDto {
+  user: UserTokenDto;
+  tokens: TokensDto;
 }

@@ -1,4 +1,4 @@
-import type { DashboardData } from '@/types';
+import type { DashboardData, ApiResponse } from '@/types';
 import { MOCK_DASHBOARD_DATA } from '@/mocks/dashboard.mock';
 import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
@@ -16,7 +16,9 @@ export const dashboardService = {
       await new Promise((r) => setTimeout(r, 600));
       return MOCK_DASHBOARD_DATA;
     }
-    const { data } = await apiClient.get<{ success: boolean; data: DashboardData }>('/dashboard');
+
+    const { data } = await apiClient.get<ApiResponse<DashboardData>>('/dashboard');
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar dashboard');
     const raw = data.data;
     return {
       ...raw,

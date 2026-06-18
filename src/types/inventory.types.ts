@@ -1,61 +1,79 @@
-export type InventoryItemCategory =
-  | 'repuesto_motor'
-  | 'repuesto_celula'
-  | 'consumible'
-  | 'herramienta'
-  | 'material'
-  | 'instrumento'
-  | 'avionico';
+export type InventoryCategory =
+  | 'RepuestoMotor'
+  | 'RepuestoCelula'
+  | 'Consumible'
+  | 'Herramienta'
+  | 'Material'
+  | 'Instrumento'
+  | 'Avionico';
 
-export type InventoryItemStatus = 'disponible' | 'reservado' | 'bajo_stock' | 'sin_stock' | 'vencido';
+export type InventoryStatus = 'Disponible' | 'Reservado' | 'BajoStock' | 'SinStock' | 'Vencido';
 
+export type MovementType = 'Entrada' | 'Salida' | 'Reserva' | 'Devolucion' | 'Ajuste';
+
+/** InventoryItemDto */
 export interface InventoryItem {
   id: string;
   partNumber: string;
-  altPartNumbers?: string[];
   description: string;
-  category: InventoryItemCategory;
+  category: InventoryCategory;
   manufacturer: string;
-  location: string; // Ej: "Estante A-3"
+  location: string;
   currentStock: number;
   minimumStock: number;
   unit: string;
   unitCost: number;
-  totalValue: number;
-  status: InventoryItemStatus;
+  status: InventoryStatus;
   expiryDate?: string;
   certificationRequired: boolean;
   certificateNumber?: string;
-  lastMovementDate: string;
+  lastMovementDate?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
-export type MovementType = 'entrada' | 'salida' | 'reserva' | 'devolucion' | 'ajuste';
-
+/** InventoryMovementDto */
 export interface InventoryMovement {
   id: string;
-  itemId: string;
-  itemPartNumber: string;
-  itemDescription: string;
   type: MovementType;
   quantity: number;
   previousStock: number;
   newStock: number;
   workOrderId?: string;
-  workOrderNumber?: string;
   reason: string;
   performedById: string;
   performedByName: string;
   performedAt: string;
-  approvedById?: string;
-  approvedByName?: string;
 }
 
 export interface InventoryFilters {
-  category?: InventoryItemCategory;
-  status?: InventoryItemStatus;
+  category?: InventoryCategory;
+  status?: InventoryStatus;
   search?: string;
   lowStock?: boolean;
   expiringSoon?: boolean;
 }
+
+export interface CreateInventoryItemPayload {
+  partNumber: string;
+  description: string;
+  category: InventoryCategory;
+  manufacturer: string;
+  location: string;
+  minimumStock: number;
+  unit: string;
+  unitCost: number;
+  certificationRequired?: boolean;
+  expiryDate?: string;
+  altPartNumbers?: string;
+}
+
+export interface CreateInventoryMovementPayload {
+  type: MovementType;
+  quantity: number;
+  workOrderId?: string;
+  reason: string;
+}
+
+/** Alias de compatibilidad */
+export type InventoryItemCategory = InventoryCategory;
+export type InventoryItemStatus = InventoryStatus;

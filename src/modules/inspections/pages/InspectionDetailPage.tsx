@@ -4,70 +4,41 @@ import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
-import { ROUTES, INSPECTION_TYPE_LABELS, CHECKLIST_STATUS_LABELS, CHECKLIST_STATUS_COLORS } from '@/constants';
+import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
+import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
+import { ROUTES, CHECKLIST_STATUS_LABELS, CHECKLIST_STATUS_COLORS } from '@/constants';
+import { useInspection, useApproveInspection, useRejectInspection } from '../hooks/useInspections';
 import type { ChecklistItemStatus } from '@/types';
 
 const STATUS_ICON: Record<ChecklistItemStatus, JSX.Element> = {
-  pendiente: <Minus size={14} className="text-gray-400" />,
-  conforme: <CheckCircle size={14} className="text-emerald-500" />,
-  no_conforme: <XCircle size={14} className="text-red-500" />,
-  na: <Minus size={14} className="text-gray-300" />,
-};
-
-// Mock data
-const MOCK_INSPECTION = {
-  id: 'ins-001',
-  workOrderNumber: 'OT-2024-0002',
-  type: 'inspeccion_anual' as const,
-  status: 'pendiente_aprobacion' as const,
-  aircraftRegistration: 'LV-BCD',
-  aircraftModel: 'Beechcraft Bonanza G36',
-  aircraftHours: 890,
-  inspectorName: 'María González',
-  scheduledDate: '2024-01-08',
-  sections: [
-    {
-      id: 'sec-001',
-      title: 'Documentación',
-      orderIndex: 1,
-      items: [
-        { id: 'item-001', code: 'DOC-01', description: 'Libro de vuelo actualizado', status: 'conforme' as const, reference: 'CAR 91' },
-        { id: 'item-002', code: 'DOC-02', description: 'Certificado de aeronavegabilidad vigente', status: 'conforme' as const, reference: 'CAR 91' },
-        { id: 'item-003', code: 'DOC-03', description: 'Manual de vuelo a bordo', status: 'conforme' as const, reference: 'CAR 91' },
-      ],
-    },
-    {
-      id: 'sec-002',
-      title: 'Inspección de Célula',
-      orderIndex: 2,
-      items: [
-        { id: 'item-004', code: 'CEL-01', description: 'Inspección visual fuselaje', status: 'conforme' as const },
-        { id: 'item-005', code: 'CEL-02', description: 'Control de alerones y timones', status: 'conforme' as const },
-        { id: 'item-006', code: 'CEL-03', description: 'Estado de parabrisas', status: 'no_conforme' as const, observations: 'Micro-grieta en ángulo inferior derecho - requiere reemplazo' },
-      ],
-    },
-    {
-      id: 'sec-003',
-      title: 'Sistema de Propulsión',
-      orderIndex: 3,
-      items: [
-        { id: 'item-007', code: 'MOT-01', description: 'Nivel y calidad de aceite', status: 'conforme' as const },
-        { id: 'item-008', code: 'MOT-02', description: 'Estado de bujías', status: 'pendiente' as const },
-        { id: 'item-009', code: 'MOT-03', description: 'Inspección de hélice', status: 'conforme' as const },
-      ],
-    },
-  ],
+  Pendiente: <Minus size={14} className="text-gray-400" />,
+  Conforme: <CheckCircle size={14} className="text-emerald-500" />,
+  NoConforme: <XCircle size={14} className="text-red-500" />,
+  NA: <Minus size={14} className="text-gray-300" />,
 };
 
 export function InspectionDetailPage(): JSX.Element {
-  const { id: _id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const inspection = MOCK_INSPECTION;
+  const { data: inspection, isLoading, isError, refetch } = useInspection(id ?? '');
+  const { mutate: approve, isPending: isApproving } = useApproveInspection();
+  const { mutate: reject, isPending: isRejecting } = useRejectInspection();
 
-  const allItems = inspection.sections.flatMap((s) => s.items);
-  const conformeCount = allItems.filter((i) => i.status === 'conforme').length;
-  const noConformeCount = allItems.filter((i) => i.status === 'no_conforme').length;
-  const pendingCount = allItems.filter((i) => i.status === 'pendiente').length;
+  if (isLoading) return <PageLoader />;
+  if (isError || !inspection) {
+    return (
+      <ErrorState
+        title="Inspección no encontrada"
+        description="La inspección solicitada no existe o no tenés permisos para verla."
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  const allItems = inspection.checklistSections.flatMap((s) => s.items);
+  const conformeCount = allItems.filter((i) => i.status === 'Conforme').length;
+  const noConformeCount = allItems.filter((i) => i.status === 'NoConforme').length;
+  const pendingCount = allItems.filter((i) => i.status === 'Pendiente').length;
 
   return (
     <motion.div
@@ -90,23 +61,37 @@ export function InspectionDetailPage(): JSX.Element {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-surface-900 dark:text-white">
-                Inspección {INSPECTION_TYPE_LABELS[inspection.type]}
+                Inspección {inspection.type}
               </h1>
               <StatusBadge type="inspection" status={inspection.status} />
             </div>
             <p className="text-sm text-surface-500">
-              {inspection.workOrderNumber} · {inspection.aircraftRegistration} · {inspection.aircraftModel}
+              {inspection.workOrderNumber} · {inspection.aircraftRegistration}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="destructive" size="sm" leftIcon={<XCircle size={14} />}>
-            Rechazar
-          </Button>
-          <Button variant="success" size="sm" leftIcon={<CheckCircle size={14} />}>
-            Aprobar
-          </Button>
-        </div>
+        {inspection.status === 'Completada' && (
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              leftIcon={<XCircle size={14} />}
+              isLoading={isRejecting}
+              onClick={() => reject({ id: inspection.id, rejectionReason: 'Rechazada por inspector' })}
+            >
+              Rechazar
+            </Button>
+            <Button
+              variant="success"
+              size="sm"
+              leftIcon={<CheckCircle size={14} />}
+              isLoading={isApproving}
+              onClick={() => approve({ id: inspection.id })}
+            >
+              Aprobar
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Resumen */}
@@ -128,7 +113,7 @@ export function InspectionDetailPage(): JSX.Element {
 
       {/* Checklist por secciones */}
       <div className="space-y-4">
-        {inspection.sections.map((section) => (
+        {inspection.checklistSections.map((section) => (
           <Card key={section.id}>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -138,7 +123,7 @@ export function InspectionDetailPage(): JSX.Element {
                 <CardTitle>{section.title}</CardTitle>
               </div>
               <span className="text-xs text-surface-500">
-                {section.items.filter((i) => i.status !== 'pendiente').length}/{section.items.length} verificados
+                {section.items.filter((i) => i.status !== 'Pendiente').length}/{section.items.length} verificados
               </span>
             </CardHeader>
             <CardBody>

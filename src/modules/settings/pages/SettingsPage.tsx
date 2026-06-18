@@ -1,9 +1,11 @@
-import { Settings, Users, ShieldCheck, Sliders, ChevronRight } from 'lucide-react';
+import { Users, ShieldCheck, Sliders, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Card } from '@/shared/components/ui/Card';
-import { MOCK_USERS } from '@/mocks/users.mock';
+import { Spinner } from '@/shared/components/ui/Spinner';
 import { ROLE_LABELS, ROLE_COLORS } from '@/constants';
+import { useUsers } from '../hooks/useUsers';
+import type { UserRole } from '@/types';
 
 const CONFIG_SECTIONS = [
   {
@@ -33,6 +35,9 @@ const CONFIG_SECTIONS = [
 ];
 
 export function SettingsPage(): JSX.Element {
+  const { data: result, isLoading } = useUsers({}, 1, 50);
+  const users = result?.data ?? [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -79,32 +84,38 @@ export function SettingsPage(): JSX.Element {
           Usuarios del sistema
         </h2>
         <Card padding="none">
-          <div className="divide-y divide-surface-100 dark:divide-surface-700">
-            {MOCK_USERS.map((user) => (
-              <div key={user.id} className="flex items-center justify-between gap-4 px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-aviation-600 text-xs font-bold text-white">
-                    {user.firstName[0]}{user.lastName[0]}
+          {isLoading ? (
+            <div className="flex h-32 items-center justify-center">
+              <Spinner size="md" />
+            </div>
+          ) : (
+            <div className="divide-y divide-surface-100 dark:divide-surface-700">
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center justify-between gap-4 px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-aviation-600 text-xs font-bold text-white">
+                      {user.firstName[0]}{user.lastName[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-surface-900 dark:text-white">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className="text-xs text-surface-500">{user.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-surface-900 dark:text-white">
-                      {user.firstName} {user.lastName}
-                    </p>
-                    <p className="text-xs text-surface-500">{user.email}</p>
+                  <div className="flex items-center gap-3">
+                    {user.licenseNumber && (
+                      <span className="font-mono text-xs text-surface-400">{user.licenseNumber}</span>
+                    )}
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role as UserRole] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {ROLE_LABELS[user.role as UserRole] ?? user.role}
+                    </span>
+                    <span className={`h-2 w-2 rounded-full ${user.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} aria-label={user.isActive ? 'Activo' : 'Inactivo'} />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {user.licenseNumber && (
-                    <span className="font-mono text-xs text-surface-400">{user.licenseNumber}</span>
-                  )}
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role]}`}>
-                    {ROLE_LABELS[user.role]}
-                  </span>
-                  <span className={`h-2 w-2 rounded-full ${user.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} aria-label={user.isActive ? 'Activo' : 'Inactivo'} />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
       </section>
     </motion.div>
