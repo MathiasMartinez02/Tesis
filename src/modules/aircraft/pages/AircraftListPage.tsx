@@ -140,7 +140,7 @@ export function AircraftListPage(): JSX.Element {
         title="Aeronaves"
         description={`${data?.total ?? 0} aeronaves registradas`}
         actions={
-          <Button size="sm" leftIcon={<Plus size={15} />}>
+          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.AIRCRAFT_NEW)}>
             Nueva Aeronave
           </Button>
         }

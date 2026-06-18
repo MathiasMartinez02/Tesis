@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare } from 'lucide-react';
+import { CheckSquare, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
+import { Button } from '@/shared/components/ui/Button';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
@@ -123,6 +124,11 @@ export function InspectionsListPage(): JSX.Element {
       <PageHeader
         title="Inspecciones"
         description={`${filtered.length} inspecciones en el sistema`}
+        actions={
+          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.INSPECTION_NEW)}>
+            Nueva Inspección
+          </Button>
+        }
       />
 
       <div className="flex items-center gap-3">

@@ -34,7 +34,7 @@ export interface UpcomingExpiry {
 
 export interface RecentActivity {
   id: string;
-  type: 'work_order_created' | 'work_order_completed' | 'inspection_approved' | 'inspection_rejected' | 'aircraft_added' | 'part_requested';
+  type: string;
   description: string;
   userId: string;
   userName: string;

@@ -25,6 +25,7 @@ export const ROUTES = {
 
   // Inspecciones
   INSPECTIONS: '/inspecciones',
+  INSPECTION_NEW: '/inspecciones/nueva',
   INSPECTION_DETAIL: '/inspecciones/:id',
 
   // Taller

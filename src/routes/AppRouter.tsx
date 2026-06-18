@@ -34,9 +34,21 @@ const WorkOrderNewPage = lazy(() =>
   }))
 );
 
+const WorkOrderEditPage = lazy(() =>
+  import('@/modules/workOrders/pages/WorkOrderEditPage').then((m) => ({
+    default: m.WorkOrderEditPage,
+  }))
+);
+
 const AircraftListPage = lazy(() =>
   import('@/modules/aircraft/pages/AircraftListPage').then((m) => ({
     default: m.AircraftListPage,
+  }))
+);
+
+const AircraftNewPage = lazy(() =>
+  import('@/modules/aircraft/pages/AircraftNewPage').then((m) => ({
+    default: m.AircraftNewPage,
   }))
 );
 
@@ -52,9 +64,21 @@ const ClientsListPage = lazy(() =>
   }))
 );
 
+const ClientNewPage = lazy(() =>
+  import('@/modules/clients/pages/ClientNewPage').then((m) => ({
+    default: m.ClientNewPage,
+  }))
+);
+
 const InspectionsListPage = lazy(() =>
   import('@/modules/inspections/pages/InspectionsListPage').then((m) => ({
     default: m.InspectionsListPage,
+  }))
+);
+
+const InspectionNewPage = lazy(() =>
+  import('@/modules/inspections/pages/InspectionNewPage').then((m) => ({
+    default: m.InspectionNewPage,
   }))
 );
 
@@ -71,6 +95,12 @@ const WorkshopPage = lazy(() =>
 const InventoryListPage = lazy(() =>
   import('@/modules/inventory/pages/InventoryListPage').then((m) => ({
     default: m.InventoryListPage,
+  }))
+);
+
+const InventoryItemNewPage = lazy(() =>
+  import('@/modules/inventory/pages/InventoryItemNewPage').then((m) => ({
+    default: m.InventoryItemNewPage,
   }))
 );
 
@@ -140,10 +170,26 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTES.WORK_ORDER_EDIT,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <WorkOrderEditPage />
+              </Suspense>
+            ),
+          },
+          {
             path: ROUTES.AIRCRAFT,
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AircraftListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.AIRCRAFT_NEW,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AircraftNewPage />
               </Suspense>
             ),
           },
@@ -164,10 +210,26 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTES.CLIENT_NEW,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ClientNewPage />
+              </Suspense>
+            ),
+          },
+          {
             path: ROUTES.INSPECTIONS,
             element: (
               <Suspense fallback={<PageLoader />}>
                 <InspectionsListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.INSPECTION_NEW,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <InspectionNewPage />
               </Suspense>
             ),
           },
@@ -192,6 +254,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <InventoryListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.INVENTORY_ITEM_NEW,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <InventoryItemNewPage />
               </Suspense>
             ),
           },

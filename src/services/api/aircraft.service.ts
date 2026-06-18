@@ -1,7 +1,49 @@
-import type { Aircraft, AircraftFilters, PaginatedResponse } from '@/types';
+import type { Aircraft, AircraftFilters, AircraftStatus, AircraftCategory, PaginatedResponse } from '@/types';
 import { MOCK_AIRCRAFT } from '@/mocks/aircraft.mock';
 import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
+
+// ─── Normalización backend → frontend ────────────────────────────────────────
+
+const STATUS_MAP: Record<string, AircraftStatus> = {
+  Operativa: 'operativa',
+  EnMantenimiento: 'en_mantenimiento',
+  FueraDeServicio: 'fuera_de_servicio',
+  EnInspeccion: 'en_inspeccion',
+};
+
+const CATEGORY_MAP: Record<string, AircraftCategory> = {
+  Avion: 'avion',
+  Helicoptero: 'helicoptero',
+  Planeador: 'planeador',
+  Ultraliviano: 'ultraliviano',
+};
+
+const STATUS_TO_BACKEND = Object.fromEntries(
+  Object.entries(STATUS_MAP).map(([k, v]) => [v, k])
+) as Record<AircraftStatus, string>;
+
+const CATEGORY_TO_BACKEND = Object.fromEntries(
+  Object.entries(CATEGORY_MAP).map(([k, v]) => [v, k])
+) as Record<AircraftCategory, string>;
+
+function normalizeAircraft(raw: Aircraft): Aircraft {
+  return {
+    ...raw,
+    status: STATUS_MAP[raw.status as string] ?? (raw.status as AircraftStatus),
+    category: CATEGORY_MAP[raw.category as string] ?? (raw.category as AircraftCategory),
+  };
+}
+
+function denormalizeFilters(filters: AircraftFilters): Record<string, unknown> {
+  return {
+    ...filters,
+    ...(filters.status && { status: STATUS_TO_BACKEND[filters.status] }),
+    ...(filters.category && { category: CATEGORY_TO_BACKEND[filters.category] }),
+  };
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 
 export const aircraftService = {
   async getAll(
@@ -11,7 +53,6 @@ export const aircraftService = {
   ): Promise<PaginatedResponse<Aircraft>> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));
-
       const filtered = MOCK_AIRCRAFT.filter((a) => {
         if (filters.status && a.status !== filters.status) return false;
         if (filters.category && a.category !== filters.category) return false;
@@ -26,7 +67,6 @@ export const aircraftService = {
         }
         return true;
       });
-
       const start = (page - 1) * pageSize;
       return {
         data: filtered.slice(start, start + pageSize),
@@ -37,10 +77,13 @@ export const aircraftService = {
       };
     }
 
-    const { data } = await apiClient.get<PaginatedResponse<Aircraft>>('/aircraft', {
-      params: { ...filters, page, pageSize },
+    const { data } = await apiClient.get<{ success: boolean; data: PaginatedResponse<Aircraft> }>('/aircraft', {
+      params: { ...denormalizeFilters(filters), page, pageSize },
     });
-    return data;
+    return {
+      ...data.data,
+      data: data.data.data.map(normalizeAircraft),
+    };
   },
 
   async getById(id: string): Promise<Aircraft> {
@@ -50,7 +93,7 @@ export const aircraftService = {
       if (!aircraft) throw new Error('Aeronave no encontrada');
       return aircraft;
     }
-    const { data } = await apiClient.get<Aircraft>(`/aircraft/${id}`);
-    return data;
+    const { data } = await apiClient.get<{ success: boolean; data: Aircraft }>(`/aircraft/${id}`);
+    return normalizeAircraft(data.data);
   },
 };

@@ -21,9 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 // Usuarios demo para facilitar el acceso en desarrollo
 const DEMO_ACCOUNTS = [
-  { email: 'gerente@sigma.aero', label: 'Gerente', color: 'bg-purple-100 text-purple-700' },
-  { email: 'inspector@sigma.aero', label: 'Inspector', color: 'bg-emerald-100 text-emerald-700' },
-  { email: 'jefetaller@sigma.aero', label: 'Jefe Taller', color: 'bg-orange-100 text-orange-700' },
+  { email: 'admin@sigma.aero', label: 'Administrador', color: 'bg-purple-100 text-purple-700' },
 ];
 
 export function LoginPage(): JSX.Element {
@@ -63,7 +61,7 @@ export function LoginPage(): JSX.Element {
 
   const fillDemo = (email: string): void => {
     setValue('email', email);
-    setValue('password', 'sigma2024');
+    setValue('password', 'sigma2026');
   };
 
   return (
@@ -107,7 +105,7 @@ export function LoginPage(): JSX.Element {
             </button>
           ))}
         </div>
-        <p className="mt-1 text-2xs text-surface-400">Contraseña: sigma2024</p>
+        <p className="mt-1 text-2xs text-surface-400">Contraseña: sigma2026</p>
       </div>
 
       <form

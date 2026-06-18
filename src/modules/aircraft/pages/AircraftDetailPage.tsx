@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plane, Engine, Clock, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plane, Cog, Clock, Calendar, FileText, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
@@ -169,7 +169,7 @@ export function AircraftDetailPage(): JSX.Element {
                     </p>
                   </div>
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50">
-                    <Engine size={18} className="text-purple-600" />
+                    <Cog size={18} className="text-purple-600" />
                   </div>
                 </div>
               </CardBody>

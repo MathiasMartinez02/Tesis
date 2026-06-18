@@ -1,7 +1,73 @@
-import type { WorkOrder, WorkOrderDetail, WorkOrderFilters, PaginatedResponse } from '@/types';
+import type { WorkOrder, WorkOrderDetail, WorkOrderFilters, PaginatedResponse, WorkOrderStatus, WorkOrderPriority, WorkOrderType } from '@/types';
 import { MOCK_WORK_ORDERS } from '@/mocks/workOrders.mock';
 import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
+
+// ─── Normalización backend → frontend ────────────────────────────────────────
+
+const STATUS_MAP: Record<string, WorkOrderStatus> = {
+  Pendiente: 'pendiente',
+  EnProceso: 'en_proceso',
+  EnInspeccion: 'en_inspeccion',
+  Finalizada: 'finalizada',
+  Cancelada: 'cancelada',
+};
+
+const PRIORITY_MAP: Record<string, WorkOrderPriority> = {
+  Baja: 'baja',
+  Media: 'media',
+  Alta: 'alta',
+  Critica: 'critica',
+};
+
+const TYPE_MAP: Record<string, WorkOrderType> = {
+  Inspeccion50h: 'inspeccion_50h',
+  Inspeccion100h: 'inspeccion_100h',
+  Inspeccion200h: 'inspeccion_200h',
+  InspeccionAnual: 'inspeccion_anual',
+  Reparacion: 'reparacion',
+  Modificacion: 'modificacion',
+  AdCumplimiento: 'ad_cumplimiento',
+  Servicio: 'servicio',
+};
+
+function normalizeWorkOrder(raw: WorkOrder): WorkOrder {
+  return {
+    ...raw,
+    status: STATUS_MAP[raw.status as string] ?? (raw.status as WorkOrderStatus),
+    priority: PRIORITY_MAP[raw.priority as string] ?? (raw.priority as WorkOrderPriority),
+    type: TYPE_MAP[raw.type as string] ?? (raw.type as WorkOrderType),
+    assignedMechanics: raw.assignedMechanics ?? [],
+    tasks: raw.tasks ?? [],
+    createdById: raw.createdById ?? '',
+    createdByName: raw.createdByName ?? '',
+  };
+}
+
+// ─── Conversión frontend → backend (para enviar filtros) ─────────────────────
+
+const STATUS_TO_BACKEND = Object.fromEntries(
+  Object.entries(STATUS_MAP).map(([k, v]) => [v, k])
+) as Record<WorkOrderStatus, string>;
+
+const PRIORITY_TO_BACKEND = Object.fromEntries(
+  Object.entries(PRIORITY_MAP).map(([k, v]) => [v, k])
+) as Record<WorkOrderPriority, string>;
+
+const TYPE_TO_BACKEND = Object.fromEntries(
+  Object.entries(TYPE_MAP).map(([k, v]) => [v, k])
+) as Record<WorkOrderType, string>;
+
+function denormalizeFilters(filters: WorkOrderFilters): Record<string, unknown> {
+  return {
+    ...filters,
+    ...(filters.status && { status: STATUS_TO_BACKEND[filters.status] }),
+    ...(filters.priority && { priority: PRIORITY_TO_BACKEND[filters.priority] }),
+    ...(filters.type && { type: TYPE_TO_BACKEND[filters.type] }),
+  };
+}
+
+// ─── Helpers mock ─────────────────────────────────────────────────────────────
 
 function applyFilters(orders: WorkOrder[], filters: WorkOrderFilters): WorkOrder[] {
   return orders.filter((order) => {
@@ -23,6 +89,8 @@ function applyFilters(orders: WorkOrder[], filters: WorkOrderFilters): WorkOrder
   });
 }
 
+// ─── Service ──────────────────────────────────────────────────────────────────
+
 export const workOrdersService = {
   async getAll(
     filters: WorkOrderFilters = {},
@@ -42,10 +110,13 @@ export const workOrdersService = {
       };
     }
 
-    const { data } = await apiClient.get<PaginatedResponse<WorkOrder>>('/work-orders', {
-      params: { ...filters, page, pageSize },
+    const { data } = await apiClient.get<{ success: boolean; data: PaginatedResponse<WorkOrder> }>('/work-orders', {
+      params: { ...denormalizeFilters(filters), page, pageSize },
     });
-    return data;
+    return {
+      ...data.data,
+      data: data.data.data.map(normalizeWorkOrder),
+    };
   },
 
   async getById(id: string): Promise<WorkOrderDetail> {
@@ -53,7 +124,6 @@ export const workOrdersService = {
       await new Promise((r) => setTimeout(r, 300));
       const order = MOCK_WORK_ORDERS.find((o) => o.id === id);
       if (!order) throw new Error(`OT ${id} no encontrada`);
-
       return {
         ...order,
         timeline: [
@@ -83,8 +153,14 @@ export const workOrdersService = {
       };
     }
 
-    const { data } = await apiClient.get<WorkOrderDetail>(`/work-orders/${id}`);
-    return data;
+    const { data } = await apiClient.get<{ success: boolean; data: WorkOrderDetail }>(`/work-orders/${id}`);
+    const normalized = normalizeWorkOrder(data.data) as WorkOrderDetail;
+    return {
+      ...normalized,
+      timeline: data.data.timeline ?? [],
+      materials: data.data.materials ?? [],
+      documents: data.data.documents ?? [],
+    };
   },
 
   async create(payload: Partial<WorkOrder>): Promise<WorkOrder> {
@@ -103,8 +179,44 @@ export const workOrdersService = {
       MOCK_WORK_ORDERS.push(newOrder);
       return newOrder;
     }
-    const { data } = await apiClient.post<WorkOrder>('/work-orders', payload);
-    return data;
+    const { data } = await apiClient.post<{ success: boolean; data: WorkOrder }>('/work-orders', payload);
+    return normalizeWorkOrder(data.data);
+  },
+
+  async update(
+    id: string,
+    payload: { description: string; estimatedHours: number; estimatedEndDate: string; priority: WorkOrderPriority }
+  ): Promise<WorkOrder> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 600));
+      const order = MOCK_WORK_ORDERS.find((o) => o.id === id);
+      if (!order) throw new Error('OT no encontrada');
+      Object.assign(order, payload, { updatedAt: new Date().toISOString() });
+      return order;
+    }
+    const { data } = await apiClient.put<{ success: boolean; data: WorkOrder }>(`/work-orders/${id}`, {
+      description: payload.description,
+      estimatedHours: payload.estimatedHours,
+      estimatedEndDate: payload.estimatedEndDate,
+      priority: PRIORITY_TO_BACKEND[payload.priority],
+    });
+    return normalizeWorkOrder(data.data);
+  },
+
+  async addMechanic(workOrderId: string, userId: string): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 200));
+      return;
+    }
+    await apiClient.post(`/work-orders/${workOrderId}/mechanics`, { userId });
+  },
+
+  async removeMechanic(workOrderId: string, userId: string): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 200));
+      return;
+    }
+    await apiClient.delete(`/work-orders/${workOrderId}/mechanics/${userId}`);
   },
 
   async updateStatus(id: string, status: WorkOrder['status']): Promise<WorkOrder> {
@@ -116,7 +228,7 @@ export const workOrdersService = {
       order.updatedAt = new Date().toISOString();
       return order;
     }
-    const { data } = await apiClient.patch<WorkOrder>(`/work-orders/${id}/status`, { status });
-    return data;
+    const { data } = await apiClient.patch<{ success: boolean; data: WorkOrder }>(`/work-orders/${id}/status`, { status });
+    return normalizeWorkOrder(data.data);
   },
 };

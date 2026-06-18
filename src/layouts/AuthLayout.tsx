@@ -25,9 +25,9 @@ export function AuthLayout(): JSX.Element {
           {/* Stats decorativos */}
           <div className="mt-12 grid grid-cols-3 gap-6">
             {[
-              { label: 'Aeronaves activas', value: '48+' },
-              { label: 'OT completadas', value: '1.2K+' },
-              { label: 'Inspecciones', value: '320+' },
+              { label: 'Aeronaves activas', value: '6+' },
+              { label: 'OT completadas', value: '120+' },
+              { label: 'Inspecciones', value: '300+' },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-3xl font-bold text-white">{stat.value}</p>
@@ -38,7 +38,7 @@ export function AuthLayout(): JSX.Element {
         </div>
 
         <p className="text-aviation-400 text-sm">
-          © {new Date().getFullYear()} SIGMA. Todos los derechos reservados.
+          © {new Date().getFullYear()} SIGMA. Casi todos los derechos reservados.
         </p>
       </div>
 

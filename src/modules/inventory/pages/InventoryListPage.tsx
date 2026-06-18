@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package, Plus, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
@@ -8,6 +9,7 @@ import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { Card } from '@/shared/components/ui/Card';
 import { KPICard } from '@/shared/components/KPICard/KPICard';
+import { ROUTES } from '@/constants';
 import { MOCK_INVENTORY } from '@/mocks/inventory.mock';
 import { formatCurrency } from '@/lib/utils';
 import type { InventoryItem, TableColumn } from '@/types';
@@ -81,6 +83,7 @@ const COLUMNS: TableColumn<InventoryItem>[] = [
 ];
 
 export function InventoryListPage(): JSX.Element {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
   const filtered = MOCK_INVENTORY.filter((item) =>
@@ -103,7 +106,7 @@ export function InventoryListPage(): JSX.Element {
         title="Pañol / Inventario"
         description={`${MOCK_INVENTORY.length} ítems en el pañol`}
         actions={
-          <Button size="sm" leftIcon={<Plus size={15} />}>
+          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.INVENTORY_ITEM_NEW)}>
             Nuevo ítem
           </Button>
         }

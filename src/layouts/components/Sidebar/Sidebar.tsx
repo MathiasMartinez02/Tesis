@@ -31,13 +31,13 @@ export function Sidebar(): JSX.Element {
   const sidebarContent = (
     <div
       className={cn(
-        'flex h-full flex-col bg-surface-900 transition-all duration-300',
+        'relative flex h-full flex-col bg-surface-900 transition-all duration-300',
         collapsed ? 'w-sidebar-collapsed' : 'w-sidebar'
       )}
     >
       {/* ── Logo ────────────────────────────────────────────────────── */}
-      <div className="flex h-navbar items-center justify-between border-b border-surface-700/50 px-4">
-        <div className="flex items-center gap-3 overflow-hidden">
+      <div className="flex h-navbar items-center justify-between border-b border-surface-700/50 px-3">
+        <div className={cn('flex items-center gap-3 overflow-hidden', collapsed && 'w-full justify-center')}>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-aviation">
             <Plane size={16} className="text-white" />
           </div>
@@ -49,24 +49,26 @@ export function Sidebar(): JSX.Element {
           )}
         </div>
 
-        {/* Toggle collapse - solo desktop */}
-        <button
-          onClick={toggleSidebar}
-          aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-          className="hidden shrink-0 rounded-md p-1 text-surface-400 transition-colors hover:bg-surface-700 hover:text-white lg:flex"
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-
         {/* Cerrar en mobile */}
-        <button
-          onClick={() => setMobileOpen(false)}
-          aria-label="Cerrar menú"
-          className="shrink-0 rounded-md p-1 text-surface-400 hover:bg-surface-700 hover:text-white lg:hidden"
-        >
-          <X size={18} />
-        </button>
+        {!collapsed && (
+          <button
+            onClick={() => setMobileOpen(false)}
+            aria-label="Cerrar menú"
+            className="shrink-0 rounded-md p-1 text-surface-400 hover:bg-surface-700 hover:text-white lg:hidden"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
+
+      {/* Toggle collapse — flotante en el borde derecho, solo desktop */}
+      <button
+        onClick={toggleSidebar}
+        aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+        className="absolute -right-3 top-[68px] z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-surface-600 bg-surface-800 text-surface-400 shadow-md transition-colors hover:bg-surface-700 hover:text-white lg:flex"
+      >
+        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+      </button>
 
       {/* ── Navegación ──────────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-thin" aria-label="Navegación principal">

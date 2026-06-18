@@ -31,7 +31,7 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && originalRequest) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest.url?.includes('/auth/login')) {
       // Token expirado - intentar refresh
       try {
         const refreshToken = localStorage.getItem('sigma_refresh_token');

@@ -8,7 +8,7 @@ import { Timeline } from '@/shared/components/Timeline/Timeline';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { useWorkOrder, useUpdateWorkOrderStatus } from '../hooks/useWorkOrders';
-import { WORK_ORDER_TYPE_LABELS, ROUTES } from '@/constants';
+import { WORK_ORDER_TYPE_LABELS, ROUTES, buildRoute } from '@/constants';
 import { formatDate, formatDateTime, formatFlightHours } from '@/lib/utils';
 import type { WorkOrder } from '@/types';
 
@@ -84,7 +84,12 @@ export function WorkOrderDetailPage(): JSX.Element {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Edit size={14} />}>
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Edit size={14} />}
+            onClick={() => navigate(buildRoute(ROUTES.WORK_ORDER_EDIT, { id: order.id }))}
+          >
             Editar
           </Button>
           <div className="relative group">

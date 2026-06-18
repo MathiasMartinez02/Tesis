@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Plane, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
+import { ROUTES } from '@/constants';
 import { MOCK_CLIENTS } from '@/mocks/clients.mock';
 
 function ClientCard({ client }: { client: (typeof MOCK_CLIENTS)[number] }): JSX.Element {
@@ -52,6 +54,7 @@ function ClientCard({ client }: { client: (typeof MOCK_CLIENTS)[number] }): JSX.
 }
 
 export function ClientsListPage(): JSX.Element {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
   const filtered = MOCK_CLIENTS.filter(
@@ -72,7 +75,7 @@ export function ClientsListPage(): JSX.Element {
         title="Clientes"
         description={`${MOCK_CLIENTS.length} clientes registrados`}
         actions={
-          <Button size="sm" leftIcon={<Plus size={15} />}>
+          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.CLIENT_NEW)}>
             Nuevo cliente
           </Button>
         }
