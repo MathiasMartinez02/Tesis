@@ -108,3 +108,22 @@ export function useAddInventoryMovement() {
     },
   });
 }
+
+// Aprueba un movimiento de tipo Salida pendiente de aprobacion, e invalida las queries del item y sus movimientos
+export function useApproveInventoryMovement() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ itemId, movementId }: { itemId: string; movementId: string }) =>
+      inventoryService.approveMovement(itemId, movementId),
+    onSuccess: (_, { itemId }) => {
+      void queryClient.invalidateQueries({ queryKey: [...INVENTORY_QUERY_KEY, itemId] });
+      void queryClient.invalidateQueries({ queryKey: INVENTORY_QUERY_KEY });
+      addToast({ type: 'success', title: 'Movimiento aprobado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al aprobar movimiento', description: err.message });
+    },
+  });
+}

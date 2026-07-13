@@ -7,7 +7,9 @@ export type InventoryCategory =
   | 'Instrumento'
   | 'Avionico';
 
-export type InventoryStatus = 'Disponible' | 'Reservado' | 'BajoStock' | 'SinStock' | 'Vencido';
+// MODIFICADO: se agrega 'SobreStock' para el caso en que el stock actual supera el stock maximo definido
+// ANTERIOR: 'Disponible' | 'Reservado' | 'BajoStock' | 'SinStock' | 'Vencido'
+export type InventoryStatus = 'Disponible' | 'Reservado' | 'BajoStock' | 'SinStock' | 'Vencido' | 'SobreStock';
 
 export type MovementType = 'Entrada' | 'Salida' | 'Reserva' | 'Devolucion' | 'Ajuste';
 
@@ -21,6 +23,7 @@ export interface InventoryItem {
   location: string;
   currentStock: number;
   minimumStock: number;
+  maximumStock?: number;
   unit: string;
   unitCost: number;
   status: InventoryStatus;
@@ -31,6 +34,8 @@ export interface InventoryItem {
   createdAt: string;
 }
 
+// MODIFICADO: se agregan approvedById/approvedByName (opcionales) para reflejar la aprobacion de movimientos de tipo Salida
+// ANTERIOR: no incluia informacion de aprobacion
 /** InventoryMovementDto */
 export interface InventoryMovement {
   id: string;
@@ -43,6 +48,8 @@ export interface InventoryMovement {
   performedById: string;
   performedByName: string;
   performedAt: string;
+  approvedById?: string;
+  approvedByName?: string;
 }
 
 export interface InventoryFilters {
@@ -60,6 +67,7 @@ export interface CreateInventoryItemPayload {
   manufacturer: string;
   location: string;
   minimumStock: number;
+  maximumStock?: number;
   unit: string;
   unitCost: number;
   certificationRequired?: boolean;
@@ -79,6 +87,7 @@ export interface UpdateInventoryItemPayload {
   description: string;
   location: string;
   minimumStock: number;
+  maximumStock?: number;
   unitCost: number;
   certificateNumber?: string;
   expiryDate?: string;

@@ -14,30 +14,40 @@ import { useCreateInventoryItem, useAddInventoryMovement } from '@/modules/inven
 import { useUIStore } from '@/store/uiStore';
 import type { SelectOption } from '@/types';
 
-// MODIFICADO: los valores del enum ahora coinciden con InventoryCategory (PascalCase) para poder enviarse tal cual al payload de creación
-// ANTERIOR: usaba valores en snake_case ('repuesto_motor', etc.) que no correspondían al tipo InventoryCategory del backend
-const inventorySchema = z.object({
-  partNumber: z.string().min(1, 'Requerido'),
-  description: z.string().min(5, 'Mínimo 5 caracteres'),
-  category: z.enum([
-    'RepuestoMotor',
-    'RepuestoCelula',
-    'Consumible',
-    'Herramienta',
-    'Material',
-    'Instrumento',
-    'Avionico',
-  ]),
-  manufacturer: z.string().min(1, 'Requerido'),
-  location: z.string().min(1, 'Requerido'),
-  currentStock: z.number().min(0),
-  minimumStock: z.number().min(0),
-  unit: z.string().min(1, 'Requerido'),
-  unitCost: z.number().min(0),
-  certificationRequired: z.boolean(),
-  certificateNumber: z.string().optional(),
-  expiryDate: z.string().optional(),
-});
+// MODIFICADO: se agrega el campo opcional maximumStock, con validacion de que si se informa debe ser mayor a minimumStock
+// ANTERIOR: no incluia maximumStock; los valores del enum ya coincidian con InventoryCategory (PascalCase) para poder enviarse tal cual al payload de creación
+const inventorySchema = z
+  .object({
+    partNumber: z.string().min(1, 'Requerido'),
+    description: z.string().min(5, 'Mínimo 5 caracteres'),
+    category: z.enum([
+      'RepuestoMotor',
+      'RepuestoCelula',
+      'Consumible',
+      'Herramienta',
+      'Material',
+      'Instrumento',
+      'Avionico',
+    ]),
+    manufacturer: z.string().min(1, 'Requerido'),
+    location: z.string().min(1, 'Requerido'),
+    currentStock: z.number().min(0),
+    minimumStock: z.number().min(0),
+    // El input numerico vacio llega como NaN via valueAsNumber; se normaliza a undefined antes de validar
+    maximumStock: z.preprocess(
+      (val) => (typeof val === 'number' && Number.isNaN(val) ? undefined : val),
+      z.number().min(0).optional()
+    ),
+    unit: z.string().min(1, 'Requerido'),
+    unitCost: z.number().min(0),
+    certificationRequired: z.boolean(),
+    certificateNumber: z.string().optional(),
+    expiryDate: z.string().optional(),
+  })
+  .refine(
+    (data) => data.maximumStock === undefined || data.maximumStock > data.minimumStock,
+    { message: 'El stock máximo debe ser mayor al stock mínimo', path: ['maximumStock'] }
+  );
 
 type InventoryFormData = z.infer<typeof inventorySchema>;
 
@@ -209,6 +219,13 @@ export function InventoryItemNewPage(): JSX.Element {
                   error={errors.minimumStock?.message}
                   required
                   {...register('minimumStock', { valueAsNumber: true })}
+                />
+                <Input
+                  type="number"
+                  label="Stock máximo (opcional)"
+                  min="0"
+                  error={errors.maximumStock?.message}
+                  {...register('maximumStock', { valueAsNumber: true })}
                 />
                 <Select
                   label="Unidad"

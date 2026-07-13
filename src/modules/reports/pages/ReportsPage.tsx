@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BarChart3, Download, FileText, TrendingUp, PieChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
@@ -8,7 +9,9 @@ import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { Spinner } from '@/shared/components/ui/Spinner';
-import { useAircraftStatusReport } from '../hooks/useReports';
+import { Modal } from '@/shared/components/Modal/Modal';
+import { useAircraftStatusReport, useInventoryReport } from '../hooks/useReports';
+import { formatCurrency } from '@/lib/utils';
 
 const lineData = [
   { mes: 'Jul', horas: 145 },
@@ -34,8 +37,12 @@ const STATUS_COLORS: Record<string, string> = {
   FueraDeServicio: '#ef4444',
 };
 
+// MODIFICADO: conecta la tarjeta "Inventario Pañol" al hook useInventoryReport, mostrando sus datos en un modal al hacer click
+// ANTERIOR: las 4 tarjetas de REPORT_TEMPLATES eran puramente decorativas, sin ninguna consulta asociada
 export function ReportsPage(): JSX.Element {
   const { data: aircraftReport, isLoading: isLoadingAircraft } = useAircraftStatusReport();
+  const [isInventoryReportOpen, setIsInventoryReportOpen] = useState(false);
+  const { data: inventoryReport, isLoading: isLoadingInventoryReport } = useInventoryReport();
 
   const aircraftChartData = aircraftReport
     ? Object.entries(aircraftReport.byStatus).map(([status, count]) => ({
@@ -65,13 +72,18 @@ export function ReportsPage(): JSX.Element {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {REPORT_TEMPLATES.map((template) => {
             const Icon = template.icon;
+            const isInventoryTemplate = template.id === 'inventory';
             return (
               <motion.div
                 key={template.id}
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.15 }}
               >
-                <Card hover className="h-full">
+                <Card
+                  hover
+                  className={isInventoryTemplate ? 'h-full cursor-pointer' : 'h-full'}
+                  onClick={isInventoryTemplate ? () => setIsInventoryReportOpen(true) : undefined}
+                >
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-aviation-50 mb-3">
                     <Icon size={18} className="text-aviation-600" />
                   </div>
@@ -79,14 +91,29 @@ export function ReportsPage(): JSX.Element {
                     {template.title}
                   </h3>
                   <p className="mt-1 text-xs text-surface-500">{template.description}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 w-full"
-                    leftIcon={<Download size={13} />}
-                  >
-                    Exportar PDF
-                  </Button>
+                  {isInventoryTemplate ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 w-full"
+                      leftIcon={<PieChart size={13} />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsInventoryReportOpen(true);
+                      }}
+                    >
+                      Ver datos
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 w-full"
+                      leftIcon={<Download size={13} />}
+                    >
+                      Exportar PDF
+                    </Button>
+                  )}
                 </Card>
               </motion.div>
             );
@@ -159,6 +186,48 @@ export function ReportsPage(): JSX.Element {
           </div>
         </Card>
       </div>
+
+      <Modal
+        isOpen={isInventoryReportOpen}
+        onClose={() => setIsInventoryReportOpen(false)}
+        title="Inventario Pañol"
+        description="Resumen del stock y valorización actual del pañol"
+      >
+        {isLoadingInventoryReport || !inventoryReport ? (
+          <div className="flex h-32 items-center justify-center">
+            <Spinner size="md" />
+          </div>
+        ) : (
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-surface-100 p-3 dark:border-surface-700">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-surface-400">Ítems totales</dt>
+              <dd className="mt-1 text-lg font-bold text-surface-900 dark:text-white">
+                {inventoryReport.items.length}
+              </dd>
+            </div>
+            <div className="rounded-lg border border-surface-100 p-3 dark:border-surface-700">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-surface-400">Valor total</dt>
+              <dd className="mt-1 text-lg font-bold text-surface-900 dark:text-white">
+                {formatCurrency(inventoryReport.totalValue)}
+              </dd>
+            </div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/10">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-amber-700">Stock bajo</dt>
+              <dd className="mt-1 text-lg font-bold text-amber-800">{inventoryReport.lowStockCount}</dd>
+            </div>
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900/50 dark:bg-red-900/10">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-red-700">Sin stock</dt>
+              <dd className="mt-1 text-lg font-bold text-red-800">{inventoryReport.outOfStockCount}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/40 sm:col-span-2">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-600">Ítems vencidos</dt>
+              <dd className="mt-1 text-lg font-bold text-gray-700 dark:text-gray-300">
+                {inventoryReport.expiredCount}
+              </dd>
+            </div>
+          </dl>
+        )}
+      </Modal>
     </motion.div>
   );
 }

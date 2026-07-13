@@ -14,15 +14,26 @@ import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { ROUTES, buildRoute, INVENTORY_CATEGORY_LABELS } from '@/constants';
 import { useInventoryItem, useUpdateInventoryItem } from '@/modules/inventory/hooks/useInventory';
 
-// Esquema de edición: solo incluye los campos que acepta UpdateInventoryItemPayload (el backend no permite editar N° de parte, categoría, fabricante ni unidad)
-const editSchema = z.object({
-  description: z.string().min(5, 'Mínimo 5 caracteres'),
-  location: z.string().min(1, 'Requerido'),
-  minimumStock: z.number().min(0),
-  unitCost: z.number().min(0),
-  certificateNumber: z.string().optional(),
-  expiryDate: z.string().optional(),
-});
+// MODIFICADO: se agrega el campo opcional maximumStock, con validacion de que si se informa debe ser mayor a minimumStock
+// ANTERIOR: solo incluia description, location, minimumStock, unitCost, certificateNumber, expiryDate
+const editSchema = z
+  .object({
+    description: z.string().min(5, 'Mínimo 5 caracteres'),
+    location: z.string().min(1, 'Requerido'),
+    minimumStock: z.number().min(0),
+    // El input numerico vacio llega como NaN via valueAsNumber; se normaliza a undefined antes de validar
+    maximumStock: z.preprocess(
+      (val) => (typeof val === 'number' && Number.isNaN(val) ? undefined : val),
+      z.number().min(0).optional()
+    ),
+    unitCost: z.number().min(0),
+    certificateNumber: z.string().optional(),
+    expiryDate: z.string().optional(),
+  })
+  .refine(
+    (data) => data.maximumStock === undefined || data.maximumStock > data.minimumStock,
+    { message: 'El stock máximo debe ser mayor al stock mínimo', path: ['maximumStock'] }
+  );
 
 type EditFormData = z.infer<typeof editSchema>;
 
@@ -42,12 +53,15 @@ export function InventoryItemEditPage(): JSX.Element {
     resolver: zodResolver(editSchema),
   });
 
+  // MODIFICADO: incluye maximumStock al precargar el formulario con los datos del item
+  // ANTERIOR: solo precargaba description, location, minimumStock, unitCost, certificateNumber, expiryDate
   useEffect(() => {
     if (item) {
       reset({
         description: item.description,
         location: item.location,
         minimumStock: item.minimumStock,
+        maximumStock: item.maximumStock,
         unitCost: item.unitCost,
         certificateNumber: item.certificateNumber ?? '',
         expiryDate: item.expiryDate ? item.expiryDate.split('T')[0] : '',
@@ -143,6 +157,13 @@ export function InventoryItemEditPage(): JSX.Element {
                     error={errors.minimumStock?.message}
                     required
                     {...register('minimumStock', { valueAsNumber: true })}
+                  />
+                  <Input
+                    type="number"
+                    label="Stock máximo (opcional)"
+                    min="0"
+                    error={errors.maximumStock?.message}
+                    {...register('maximumStock', { valueAsNumber: true })}
                   />
                   <Input
                     type="number"

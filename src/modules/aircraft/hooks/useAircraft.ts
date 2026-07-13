@@ -93,6 +93,15 @@ export function useAircraftMaintenanceHistory(aircraftId: string) {
   });
 }
 
+// Trae los repuestos de inventario usados en OTs asociadas a una aeronave
+export function useAircraftInventoryUsage(aircraftId: string) {
+  return useQuery({
+    queryKey: [...AIRCRAFT_QUERY_KEY, aircraftId, 'inventory-usage'],
+    queryFn: () => aircraftService.getInventoryUsage(aircraftId),
+    enabled: !!aircraftId,
+  });
+}
+
 // Sube un documento nuevo para la aeronave y refresca su detalle al terminar
 export function useAddAircraftDocument(aircraftId: string) {
   const queryClient = useQueryClient();

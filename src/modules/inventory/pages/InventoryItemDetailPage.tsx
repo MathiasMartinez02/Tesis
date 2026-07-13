@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Package, MapPin } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Package, MapPin, ArrowRightLeft, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
@@ -7,61 +8,105 @@ import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
-import { useInventoryItem, useInventoryMovements, useDeleteInventoryItem } from '../hooks/useInventory';
+import { AddInventoryMovementModal } from '../components/AddInventoryMovementModal';
+import {
+  useInventoryItem,
+  useInventoryMovements,
+  useDeleteInventoryItem,
+  useApproveInventoryMovement,
+} from '../hooks/useInventory';
 import { ROUTES, buildRoute, INVENTORY_CATEGORY_LABELS, MOVEMENT_TYPE_LABELS } from '@/constants';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import type { InventoryMovement, TableColumn } from '@/types';
 
-// Columnas de la tabla de historial de movimientos: tipo, cantidad, stock resultante, quien lo hizo y cuando
-const MOVEMENT_COLUMNS: TableColumn<InventoryMovement>[] = [
-  {
-    key: 'type',
-    header: 'Tipo',
-    width: '110px',
-    render: (value) => (
-      <span className="text-sm font-medium text-surface-900 dark:text-white">
-        {MOVEMENT_TYPE_LABELS[value as InventoryMovement['type']]}
-      </span>
-    ),
-  },
-  {
-    key: 'quantity',
-    header: 'Cantidad',
-    align: 'right',
-    width: '100px',
-    render: (value) => <span className="text-sm text-surface-700 dark:text-surface-300">{String(value)}</span>,
-  },
-  {
-    key: 'newStock',
-    header: 'Stock resultante',
-    align: 'right',
-    width: '140px',
-    render: (value) => (
-      <span className="text-sm font-semibold text-surface-900 dark:text-white">{String(value)}</span>
-    ),
-  },
-  {
-    key: 'performedByName',
-    header: 'Realizado por',
-    render: (value) => <span className="text-sm text-surface-700 dark:text-surface-300">{String(value)}</span>,
-  },
-  {
-    key: 'performedAt',
-    header: 'Fecha',
-    width: '160px',
-    render: (value) => (
-      <span className="text-xs text-surface-500">{formatDateTime(String(value))}</span>
-    ),
-  },
-];
+// MODIFICADO: se convierte en una función que recibe los handlers de aprobación para agregar la columna "Aprobación"
+// ANTERIOR: era una constante de módulo sin columna de aprobación
+// Columnas de la tabla de historial de movimientos: tipo, cantidad, stock resultante, quien lo hizo, cuando y su estado de aprobación
+function buildMovementColumns(
+  onApprove: (movementId: string) => void,
+  approvingId: string | null
+): TableColumn<InventoryMovement>[] {
+  return [
+    {
+      key: 'type',
+      header: 'Tipo',
+      width: '110px',
+      render: (value) => (
+        <span className="text-sm font-medium text-surface-900 dark:text-white">
+          {MOVEMENT_TYPE_LABELS[value as InventoryMovement['type']]}
+        </span>
+      ),
+    },
+    {
+      key: 'quantity',
+      header: 'Cantidad',
+      align: 'right',
+      width: '100px',
+      render: (value) => <span className="text-sm text-surface-700 dark:text-surface-300">{String(value)}</span>,
+    },
+    {
+      key: 'newStock',
+      header: 'Stock resultante',
+      align: 'right',
+      width: '140px',
+      render: (value) => (
+        <span className="text-sm font-semibold text-surface-900 dark:text-white">{String(value)}</span>
+      ),
+    },
+    {
+      key: 'performedByName',
+      header: 'Realizado por',
+      render: (value) => <span className="text-sm text-surface-700 dark:text-surface-300">{String(value)}</span>,
+    },
+    {
+      key: 'performedAt',
+      header: 'Fecha',
+      width: '160px',
+      render: (value) => (
+        <span className="text-xs text-surface-500">{formatDateTime(String(value))}</span>
+      ),
+    },
+    {
+      key: 'id',
+      header: 'Aprobación',
+      width: '160px',
+      render: (_, row) => {
+        if (row.type !== 'Salida') return <span className="text-xs text-surface-400">—</span>;
+        if (row.approvedByName) {
+          return (
+            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              Aprobado por {row.approvedByName}
+            </span>
+          );
+        }
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Check size={13} />}
+            isLoading={approvingId === row.id}
+            onClick={() => onApprove(row.id)}
+          >
+            Aprobar
+          </Button>
+        );
+      },
+    },
+  ];
+}
 
-// Muestra el detalle de un ítem de inventario junto a su historial de movimientos, con acciones de editar y eliminar
+// MODIFICADO: agrega el modal de "Registrar Movimiento" y la aprobación de movimientos de Salida en la tabla de historial
+// ANTERIOR: solo mostraba el detalle del item con acciones de editar y eliminar, sin poder registrar ni aprobar movimientos
+// Muestra el detalle de un ítem de inventario junto a su historial de movimientos, con acciones de editar, eliminar, registrar movimientos y aprobar salidas
 export function InventoryItemDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: item, isLoading, isError, refetch } = useInventoryItem(id ?? '');
   const { data: movementsResult, isLoading: isLoadingMovements } = useInventoryMovements(id ?? '');
   const { mutate: deleteItem, isPending: isDeleting } = useDeleteInventoryItem();
+  const { mutate: approveMovement } = useApproveInventoryMovement();
+  const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   if (isLoading) return <PageLoader />;
   if (isError || !item) {
@@ -82,6 +127,15 @@ export function InventoryItemDetailPage(): JSX.Element {
     deleteItem(item.id, {
       onSuccess: () => navigate(ROUTES.INVENTORY),
     });
+  };
+
+  // Aprueba un movimiento de Salida marcando el id en curso para mostrar el spinner solo en esa fila
+  const handleApprove = (movementId: string): void => {
+    setApprovingId(movementId);
+    approveMovement(
+      { itemId: item.id, movementId },
+      { onSettled: () => setApprovingId(null) }
+    );
   };
 
   return (
@@ -114,6 +168,14 @@ export function InventoryItemDetailPage(): JSX.Element {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<ArrowRightLeft size={14} />}
+            onClick={() => setIsMovementModalOpen(true)}
+          >
+            Registrar Movimiento
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -154,7 +216,7 @@ export function InventoryItemDetailPage(): JSX.Element {
             <CardBody>
               <DataTable<InventoryMovement>
                 data={movementsResult?.data ?? []}
-                columns={MOVEMENT_COLUMNS}
+                columns={buildMovementColumns(handleApprove, approvingId)}
                 isLoading={isLoadingMovements}
                 emptyMessage="Sin movimientos"
                 emptyDescription="Este ítem todavía no tiene movimientos de stock registrados."
@@ -230,6 +292,12 @@ export function InventoryItemDetailPage(): JSX.Element {
           )}
         </div>
       </div>
+
+      <AddInventoryMovementModal
+        isOpen={isMovementModalOpen}
+        onClose={() => setIsMovementModalOpen(false)}
+        itemId={item.id}
+      />
     </motion.div>
   );
 }

@@ -10,6 +10,7 @@ import type {
   CreateAircraftDocumentPayload,
   CreateFlightRecordPayload,
   WorkOrder,
+  AircraftInventoryUsageItem,
   ApiResponse,
   PaginatedResult,
 } from '@/types';
@@ -126,6 +127,15 @@ export const aircraftService = {
   async getMaintenanceHistory(id: string): Promise<WorkOrder[]> {
     const { data } = await apiClient.get<ApiResponse<WorkOrder[]>>(`/aircraft/${id}/maintenance-history`);
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar historial');
+    return data.data;
+  },
+
+  // Trae los repuestos de inventario usados en OTs de la aeronave (numero de parte, cantidad, fecha y OT asociada)
+  async getInventoryUsage(id: string): Promise<AircraftInventoryUsageItem[]> {
+    const { data } = await apiClient.get<ApiResponse<AircraftInventoryUsageItem[]>>(
+      `/aircraft/${id}/inventory-usage`
+    );
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar repuestos utilizados');
     return data.data;
   },
 };

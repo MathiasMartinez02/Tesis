@@ -181,4 +181,18 @@ export const inventoryService = {
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al registrar movimiento');
     return data.data;
   },
+
+  // Aprueba un movimiento de tipo Salida; el backend marca approvedById/approvedByName en la respuesta
+  async approveMovement(itemId: string, movementId: string): Promise<InventoryMovement> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 300));
+      throw new Error('Aprobación de movimientos no soportada en modo mock');
+    }
+
+    const { data } = await apiClient.patch<ApiResponse<InventoryMovement>>(
+      `/inventory/${itemId}/movements/${movementId}/approve`
+    );
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al aprobar movimiento');
+    return data.data;
+  },
 };

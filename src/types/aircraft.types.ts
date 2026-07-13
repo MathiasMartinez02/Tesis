@@ -113,3 +113,16 @@ export interface CreateAircraftDocumentPayload {
   fileUrl: string;
   expiryDate?: string;
 }
+
+// MODIFICADO: se corrige "description" a "itemDescription" (asi lo serializa el backend, AircraftInventoryUsageDto.ItemDescription)
+// y se agrega workOrderId (antes solo venia el numero visible, insuficiente para armar el link de navegacion a la OT)
+// ANTERIOR: { partNumber, description, quantity, movementDate, workOrderNumber } sin workOrderId
+/** AircraftInventoryUsageItem — item de repuesto usado en una OT, para GET /aircraft/{id}/inventory-usage */
+export interface AircraftInventoryUsageItem {
+  partNumber: string;
+  itemDescription: string;
+  quantity: number;
+  movementDate: string;
+  workOrderId: string;
+  workOrderNumber: string;
+}

@@ -106,20 +106,26 @@ export const INSPECTION_TYPE_LABELS: Record<string, string> = {
 
 // ─── Inventory ────────────────────────────────────────────────────────────────
 
+// MODIFICADO: se agrega la etiqueta de 'SobreStock' (stock actual por encima del maximo definido)
+// ANTERIOR: solo incluia Disponible, Reservado, BajoStock, SinStock, Vencido
 export const INVENTORY_STATUS_LABELS: Record<InventoryStatus, string> = {
   Disponible: 'Disponible',
   Reservado: 'Reservado',
   BajoStock: 'Bajo Stock',
   SinStock: 'Sin Stock',
   Vencido: 'Vencido',
+  SobreStock: 'Sobre-stock',
 };
 
+// MODIFICADO: se agrega el color de alerta para 'SobreStock', consistente con el usado para BajoStock
+// ANTERIOR: solo incluia Disponible, Reservado, BajoStock, SinStock, Vencido
 export const INVENTORY_STATUS_COLORS: Record<InventoryStatus, string> = {
   Disponible: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   Reservado: 'bg-blue-50 text-blue-700 border-blue-200',
   BajoStock: 'bg-amber-50 text-amber-700 border-amber-200',
   SinStock: 'bg-red-50 text-red-700 border-red-200',
   Vencido: 'bg-gray-50 text-gray-600 border-gray-200',
+  SobreStock: 'bg-amber-50 text-amber-700 border-amber-200',
 };
 
 export const INVENTORY_CATEGORY_LABELS: Record<InventoryCategory, string> = {
