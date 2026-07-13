@@ -76,12 +76,6 @@ const InspectionsListPage = lazy(() =>
   }))
 );
 
-const InspectionNewPage = lazy(() =>
-  import('@/modules/inspections/pages/InspectionNewPage').then((m) => ({
-    default: m.InspectionNewPage,
-  }))
-);
-
 const InspectionDetailPage = lazy(() =>
   import('@/modules/inspections/pages/InspectionDetailPage').then((m) => ({
     default: m.InspectionDetailPage,
@@ -222,14 +216,6 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <InspectionsListPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: ROUTES.INSPECTION_NEW,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <InspectionNewPage />
               </Suspense>
             ),
           },

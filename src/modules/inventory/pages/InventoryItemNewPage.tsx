@@ -9,20 +9,24 @@ import { Input } from '@/shared/components/ui/Input';
 import { Select } from '@/shared/components/ui/Select';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
-import { ROUTES } from '@/constants';
+import { ROUTES, INVENTORY_CATEGORY_LABELS } from '@/constants';
+import { useCreateInventoryItem, useAddInventoryMovement } from '@/modules/inventory/hooks/useInventory';
+import { useUIStore } from '@/store/uiStore';
 import type { SelectOption } from '@/types';
 
+// MODIFICADO: los valores del enum ahora coinciden con InventoryCategory (PascalCase) para poder enviarse tal cual al payload de creación
+// ANTERIOR: usaba valores en snake_case ('repuesto_motor', etc.) que no correspondían al tipo InventoryCategory del backend
 const inventorySchema = z.object({
   partNumber: z.string().min(1, 'Requerido'),
   description: z.string().min(5, 'Mínimo 5 caracteres'),
   category: z.enum([
-    'repuesto_motor',
-    'repuesto_celula',
-    'consumible',
-    'herramienta',
-    'material',
-    'instrumento',
-    'avionico',
+    'RepuestoMotor',
+    'RepuestoCelula',
+    'Consumible',
+    'Herramienta',
+    'Material',
+    'Instrumento',
+    'Avionico',
   ]),
   manufacturer: z.string().min(1, 'Requerido'),
   location: z.string().min(1, 'Requerido'),
@@ -37,15 +41,10 @@ const inventorySchema = z.object({
 
 type InventoryFormData = z.infer<typeof inventorySchema>;
 
-const CATEGORY_OPTIONS: SelectOption[] = [
-  { value: 'repuesto_motor', label: 'Repuesto de Motor' },
-  { value: 'repuesto_celula', label: 'Repuesto de Célula' },
-  { value: 'consumible', label: 'Consumible' },
-  { value: 'herramienta', label: 'Herramienta' },
-  { value: 'material', label: 'Material' },
-  { value: 'instrumento', label: 'Instrumento' },
-  { value: 'avionico', label: 'Aviónico' },
-];
+// Construye las opciones del select de categoría a partir de las etiquetas oficiales de InventoryCategory
+const CATEGORY_OPTIONS: SelectOption[] = Object.entries(INVENTORY_CATEGORY_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
 
 const UNIT_OPTIONS: SelectOption[] = [
   { value: 'unidad', label: 'Unidad' },
@@ -58,6 +57,9 @@ const UNIT_OPTIONS: SelectOption[] = [
 
 export function InventoryItemNewPage(): JSX.Element {
   const navigate = useNavigate();
+  const { mutate: createItem, isPending } = useCreateInventoryItem();
+  const { mutate: addMovement, isPending: isAddingMovement } = useAddInventoryMovement();
+  const addToast = useUIStore((s) => s.addToast);
 
   const {
     register,
@@ -76,9 +78,40 @@ export function InventoryItemNewPage(): JSX.Element {
 
   const certRequired = watch('certificationRequired');
 
-  const onSubmit = async (_data: InventoryFormData): Promise<void> => {
-    await new Promise((r) => setTimeout(r, 800));
-    navigate(ROUTES.INVENTORY);
+  // MODIFICADO: la API siempre crea el ítem con currentStock = 0; si el usuario ingresó un stock inicial mayor a 0,
+  // se dispara automáticamente un movimiento de entrada por esa cantidad para que el alta se sienta como un solo paso.
+  // Si el movimiento falla se avisa con un toast de advertencia pero no se bloquea la navegación (el ítem ya se creó).
+  // ANTERIOR: enviaba el formulario al backend con useCreateInventoryItem y navegaba al listado al finalizar, sin cargar stock
+  const onSubmit = (data: InventoryFormData): void => {
+    createItem(data, {
+      onSuccess: (item) => {
+        if (data.currentStock > 0) {
+          addMovement(
+            {
+              id: item.id,
+              payload: {
+                type: 'Entrada',
+                quantity: data.currentStock,
+                reason: 'Stock inicial de alta',
+              },
+            },
+            {
+              onSuccess: () => navigate(ROUTES.INVENTORY),
+              onError: (err: Error) => {
+                addToast({
+                  type: 'warning',
+                  title: 'Ítem creado sin stock inicial',
+                  description: `El ítem se registró pero no se pudo cargar el stock inicial: ${err.message}`,
+                });
+                navigate(ROUTES.INVENTORY);
+              },
+            }
+          );
+        } else {
+          navigate(ROUTES.INVENTORY);
+        }
+      },
+    });
   };
 
   return (
@@ -240,7 +273,7 @@ export function InventoryItemNewPage(): JSX.Element {
             <Button type="button" variant="outline" onClick={() => navigate(ROUTES.INVENTORY)}>
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isSubmitting} leftIcon={<Save size={15} />}>
+            <Button type="submit" isLoading={isSubmitting || isPending || isAddingMovement} leftIcon={<Save size={15} />}>
               Agregar al Pañol
             </Button>
           </div>

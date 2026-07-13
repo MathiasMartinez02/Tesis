@@ -95,6 +95,15 @@ export const INSPECTION_STATUS_COLORS: Record<InspectionStatus, string> = {
   Rechazada: 'bg-red-50 text-red-700 border-red-200',
 };
 
+// Etiquetas de los tipos de inspección usados al programar una nueva inspección
+export const INSPECTION_TYPE_LABELS: Record<string, string> = {
+  inspeccion_50h: 'Inspección 50h',
+  inspeccion_100h: 'Inspección 100h',
+  inspeccion_200h: 'Inspección 200h',
+  inspeccion_anual: 'Inspección Anual',
+  inspeccion_especial: 'Inspección Especial',
+};
+
 // ─── Inventory ────────────────────────────────────────────────────────────────
 
 export const INVENTORY_STATUS_LABELS: Record<InventoryStatus, string> = {

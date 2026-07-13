@@ -24,8 +24,9 @@ export const ROUTES = {
   CLIENT_EDIT: '/clientes/:id/editar',
 
   // Inspecciones
+  // MODIFICADO: se eliminó INSPECTION_NEW porque la programación de inspecciones ahora se hace desde el detalle de la OT, no desde una página independiente
+  // ANTERIOR: incluía INSPECTION_NEW: '/inspecciones/nueva'
   INSPECTIONS: '/inspecciones',
-  INSPECTION_NEW: '/inspecciones/nueva',
   INSPECTION_DETAIL: '/inspecciones/:id',
 
   // Taller

@@ -9,8 +9,10 @@ import { Input } from '@/shared/components/ui/Input';
 import { Select } from '@/shared/components/ui/Select';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
-import { ROUTES } from '@/constants';
+import { ROUTES, buildRoute } from '@/constants';
 import type { SelectOption } from '@/types';
+import { useCreateAircraft } from '../hooks/useAircraft';
+import { useClients } from '@/modules/clients/hooks/useClients';
 
 const aircraftSchema = z.object({
   registration: z
@@ -20,33 +22,38 @@ const aircraftSchema = z.object({
   manufacturer: z.string().min(1, 'Requerido'),
   model: z.string().min(1, 'Requerido'),
   year: z.number().min(1900).max(new Date().getFullYear()),
-  category: z.enum(['avion', 'helicoptero', 'planeador', 'ultraliviano']),
+  category: z.enum(['Avion', 'Helicoptero', 'Planeador', 'Ultraliviano']),
   serialNumber: z.string().min(1, 'Requerido'),
   engineModel: z.string().min(1, 'Requerido'),
   engineSerialNumber: z.string().min(1, 'Requerido'),
   clientId: z.string().min(1, 'Seleccionar cliente'),
   totalFlightHours: z.number().min(0),
+  totalLandings: z.number().min(0),
   nextInspectionDue: z.string().min(1, 'Requerido'),
+  nextInspectionHours: z.number().min(0),
+  certificateExpiry: z.string().min(1, 'Requerido'),
 });
 
 type AircraftFormData = z.infer<typeof aircraftSchema>;
 
 const CATEGORY_OPTIONS: SelectOption[] = [
-  { value: 'avion', label: 'Avión' },
-  { value: 'helicoptero', label: 'Helicóptero' },
-  { value: 'planeador', label: 'Planeador' },
-  { value: 'ultraliviano', label: 'Ultraliviano' },
-];
-
-const CLIENT_OPTIONS: SelectOption[] = [
-  { value: 'cl-001', label: 'Transportes Aéreos del Sur' },
-  { value: 'cl-002', label: 'Aeroclub del Litoral' },
-  { value: 'cl-003', label: 'Helicópteros Patagonia' },
-  { value: 'cl-004', label: 'AeroFly SA' },
+  { value: 'Avion', label: 'Avión' },
+  { value: 'Helicoptero', label: 'Helicóptero' },
+  { value: 'Planeador', label: 'Planeador' },
+  { value: 'Ultraliviano', label: 'Ultraliviano' },
 ];
 
 export function AircraftNewPage(): JSX.Element {
   const navigate = useNavigate();
+
+  // Trae clientes reales (pageSize alto para cubrir el combo completo) en vez del mock hardcodeado
+  const { data: clientsPage, isLoading: isLoadingClients } = useClients({}, 1, 100);
+  const CLIENT_OPTIONS: SelectOption[] = (clientsPage?.data ?? []).map((client) => ({
+    value: client.id,
+    label: client.name,
+  }));
+
+  const createAircraft = useCreateAircraft();
 
   const {
     register,
@@ -55,15 +62,18 @@ export function AircraftNewPage(): JSX.Element {
   } = useForm<AircraftFormData>({
     resolver: zodResolver(aircraftSchema),
     defaultValues: {
-      category: 'avion',
+      category: 'Avion',
       year: new Date().getFullYear(),
       totalFlightHours: 0,
+      totalLandings: 0,
+      nextInspectionHours: 100,
     },
   });
 
-  const onSubmit = async (_data: AircraftFormData): Promise<void> => {
-    await new Promise((r) => setTimeout(r, 800));
-    navigate(ROUTES.AIRCRAFT);
+  // Antes simulaba el guardado con un setTimeout; ahora crea la aeronave con useCreateAircraft y navega a su detalle
+  const onSubmit = async (data: AircraftFormData): Promise<void> => {
+    const newAircraft = await createAircraft.mutateAsync(data);
+    navigate(buildRoute(ROUTES.AIRCRAFT_DETAIL, { id: newAircraft.id }));
   };
 
   return (
@@ -181,8 +191,9 @@ export function AircraftNewPage(): JSX.Element {
                 <Select
                   label="Cliente / Operador"
                   options={CLIENT_OPTIONS}
-                  placeholder="Seleccionar cliente"
+                  placeholder={isLoadingClients ? 'Cargando clientes...' : 'Seleccionar cliente'}
                   error={errors.clientId?.message}
+                  disabled={isLoadingClients}
                   required
                   {...register('clientId')}
                 />
@@ -196,11 +207,36 @@ export function AircraftNewPage(): JSX.Element {
                   {...register('totalFlightHours', { valueAsNumber: true })}
                 />
                 <Input
+                  type="number"
+                  label="Aterrizajes totales"
+                  step="1"
+                  min="0"
+                  error={errors.totalLandings?.message}
+                  required
+                  {...register('totalLandings', { valueAsNumber: true })}
+                />
+                <Input
                   type="date"
                   label="Próxima inspección programada"
                   error={errors.nextInspectionDue?.message}
                   required
                   {...register('nextInspectionDue')}
+                />
+                <Input
+                  type="number"
+                  label="Horas para próxima inspección"
+                  step="0.1"
+                  min="0"
+                  error={errors.nextInspectionHours?.message}
+                  required
+                  {...register('nextInspectionHours', { valueAsNumber: true })}
+                />
+                <Input
+                  type="date"
+                  label="Vencimiento de certificado"
+                  error={errors.certificateExpiry?.message}
+                  required
+                  {...register('certificateExpiry')}
                 />
               </div>
             </CardBody>
@@ -210,7 +246,11 @@ export function AircraftNewPage(): JSX.Element {
             <Button type="button" variant="outline" onClick={() => navigate(ROUTES.AIRCRAFT)}>
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isSubmitting} leftIcon={<Save size={15} />}>
+            <Button
+              type="submit"
+              isLoading={isSubmitting || createAircraft.isPending}
+              leftIcon={<Save size={15} />}
+            >
               Registrar Aeronave
             </Button>
           </div>

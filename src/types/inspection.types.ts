@@ -64,3 +64,12 @@ export interface InspectionFilters {
   dateTo?: string;
   search?: string;
 }
+
+// MODIFICADO: el payload ahora solo lleva workOrderId, scheduledDate e inspectorId opcional; el backend deriva type, aircraftId y aircraftHours a partir de la OT
+// ANTERIOR: incluía type, aircraftId, workOrderId opcional, inspectorId obligatorio, scheduledDate, aircraftHours y notes, todos definidos desde el formulario
+/** Payload para programar una nueva inspección (POST /inspections) */
+export interface CreateInspectionPayload {
+  workOrderId: string;
+  scheduledDate: string;
+  inspectorId?: string;
+}

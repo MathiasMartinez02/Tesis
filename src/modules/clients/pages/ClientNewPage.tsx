@@ -9,6 +9,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { ROUTES } from '@/constants';
+import { useCreateClient } from '@/modules/clients/hooks/useClients';
 
 const clientSchema = z.object({
   name: z.string().min(2, 'Mínimo 2 caracteres'),
@@ -29,6 +30,7 @@ type ClientFormData = z.infer<typeof clientSchema>;
 
 export function ClientNewPage(): JSX.Element {
   const navigate = useNavigate();
+  const { mutate: createClient, isPending } = useCreateClient();
 
   const {
     register,
@@ -38,9 +40,12 @@ export function ClientNewPage(): JSX.Element {
     resolver: zodResolver(clientSchema),
   });
 
-  const onSubmit = async (_data: ClientFormData): Promise<void> => {
-    await new Promise((r) => setTimeout(r, 800));
-    navigate(ROUTES.CLIENTS);
+  // MODIFICADO: envia el formulario al backend con useCreateClient y navega al listado al finalizar
+  // ANTERIOR: simulaba el guardado con un setTimeout y navegaba sin persistir datos
+  const onSubmit = (data: ClientFormData): void => {
+    createClient(data, {
+      onSuccess: () => navigate(ROUTES.CLIENTS),
+    });
   };
 
   return (
@@ -176,7 +181,7 @@ export function ClientNewPage(): JSX.Element {
             <Button type="button" variant="outline" onClick={() => navigate(ROUTES.CLIENTS)}>
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isSubmitting} leftIcon={<Save size={15} />}>
+            <Button type="submit" isLoading={isSubmitting || isPending} leftIcon={<Save size={15} />}>
               Registrar Cliente
             </Button>
           </div>

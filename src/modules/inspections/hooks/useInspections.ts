@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inspectionsService } from '@/services/api/inspections.service';
-import type { InspectionFilters, ChecklistItemStatus } from '@/types';
+import type { InspectionFilters, ChecklistItemStatus, CreateInspectionPayload } from '@/types';
 import { useUIStore } from '@/store/uiStore';
 
 export const INSPECTIONS_QUERY_KEY = ['inspections'] as const;
@@ -17,6 +17,27 @@ export function useInspection(id: string) {
     queryKey: [...INSPECTIONS_QUERY_KEY, id],
     queryFn: () => inspectionsService.getById(id),
     enabled: !!id,
+  });
+}
+
+// Crea una nueva inspección, invalida el listado y muestra el toast correspondiente
+export function useCreateInspection() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: (payload: CreateInspectionPayload) => inspectionsService.create(payload),
+    onSuccess: (inspection) => {
+      void queryClient.invalidateQueries({ queryKey: INSPECTIONS_QUERY_KEY });
+      addToast({
+        type: 'success',
+        title: 'Inspección programada',
+        description: `Inspección de ${inspection.aircraftRegistration} programada correctamente`,
+      });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al programar inspección', description: err.message });
+    },
   });
 }
 

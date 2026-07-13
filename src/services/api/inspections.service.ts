@@ -3,6 +3,7 @@ import type {
   InspectionDetail,
   InspectionFilters,
   ChecklistItemStatus,
+  CreateInspectionPayload,
   ApiResponse,
   PaginatedResult,
 } from '@/types';
@@ -24,6 +25,13 @@ export const inspectionsService = {
   async getById(id: string): Promise<InspectionDetail> {
     const { data } = await apiClient.get<ApiResponse<InspectionDetail>>(`/inspections/${id}`);
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Inspección no encontrada');
+    return data.data;
+  },
+
+  // Crea y programa una nueva inspección
+  async create(payload: CreateInspectionPayload): Promise<Inspection> {
+    const { data } = await apiClient.post<ApiResponse<Inspection>>('/inspections', payload);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al programar inspección');
     return data.data;
   },
 

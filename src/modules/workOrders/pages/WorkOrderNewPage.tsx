@@ -9,15 +9,18 @@ import { Input } from '@/shared/components/ui/Input';
 import { Select } from '@/shared/components/ui/Select';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
-import { ROUTES, WORK_ORDER_TYPE_LABELS, WORK_ORDER_PRIORITY_LABELS } from '@/constants';
+import { ROUTES, WORK_ORDER_TYPE_LABELS, WORK_ORDER_PRIORITY_LABELS, buildRoute } from '@/constants';
 import type { SelectOption } from '@/types';
+import { useCreateWorkOrder } from '../hooks/useWorkOrders';
+import { useAircraft } from '@/modules/aircraft/hooks/useAircraft';
 
+// Corregido: los valores del enum estaban en snake_case/minusculas y no coincidian con WorkOrderType/WorkOrderPriority reales (PascalCase), lo que impedia pasar "data" directamente a useCreateWorkOrder
 const workOrderSchema = z.object({
   type: z.enum([
-    'inspeccion_50h', 'inspeccion_100h', 'inspeccion_200h',
-    'inspeccion_anual', 'reparacion', 'modificacion', 'ad_cumplimiento', 'servicio'
+    'Inspeccion50h', 'Inspeccion100h', 'Inspeccion200h',
+    'InspeccionAnual', 'Reparacion', 'Modificacion', 'AdCumplimiento', 'Servicio'
   ]),
-  priority: z.enum(['baja', 'media', 'alta', 'critica']),
+  priority: z.enum(['Baja', 'Media', 'Alta', 'Critica']),
   aircraftId: z.string().min(1, 'Seleccionar aeronave'),
   description: z.string().min(10, 'Mínimo 10 caracteres'),
   estimatedHours: z.number().min(0.5, 'Mínimo 0.5 horas').max(999),
@@ -34,17 +37,17 @@ const PRIORITY_OPTIONS: SelectOption[] = Object.entries(WORK_ORDER_PRIORITY_LABE
   ([value, label]) => ({ value, label })
 );
 
-// Mock aircraft options
-const AIRCRAFT_OPTIONS: SelectOption[] = [
-  { value: 'ac-001', label: 'LV-RGT — Cessna 172S' },
-  { value: 'ac-002', label: 'LV-MNP — Piper PA-28' },
-  { value: 'ac-003', label: 'LV-BCD — Beechcraft Bonanza' },
-  { value: 'ac-004', label: 'LV-XYZ — Robinson R44' },
-  { value: 'ac-005', label: 'LV-KRT — Cirrus SR22T' },
-];
-
 export function WorkOrderNewPage(): JSX.Element {
   const navigate = useNavigate();
+
+  // Trae aeronaves reales (pageSize alto para cubrir el combo completo) en vez del mock hardcodeado
+  const { data: aircraftPage, isLoading: isLoadingAircraft } = useAircraft({}, 1, 100);
+  const AIRCRAFT_OPTIONS: SelectOption[] = (aircraftPage?.data ?? []).map((aircraft) => ({
+    value: aircraft.id,
+    label: `${aircraft.registration} — ${aircraft.manufacturer} ${aircraft.model}`,
+  }));
+
+  const createWorkOrder = useCreateWorkOrder();
 
   const {
     register,
@@ -53,15 +56,15 @@ export function WorkOrderNewPage(): JSX.Element {
   } = useForm<WorkOrderFormData>({
     resolver: zodResolver(workOrderSchema),
     defaultValues: {
-      priority: 'media',
+      priority: 'Media',
       estimatedHours: 6,
     },
   });
 
-  const onSubmit = async (_data: WorkOrderFormData): Promise<void> => {
-    // TODO: Conectar con workOrdersService.create()
-    await new Promise((r) => setTimeout(r, 800));
-    navigate(ROUTES.WORK_ORDERS);
+  // Antes simulaba el guardado con un setTimeout; ahora crea la OT con useCreateWorkOrder y navega a su detalle
+  const onSubmit = async (data: WorkOrderFormData): Promise<void> => {
+    const newOrder = await createWorkOrder.mutateAsync(data);
+    navigate(buildRoute(ROUTES.WORK_ORDER_DETAIL, { id: newOrder.id }));
   };
 
   return (
@@ -123,8 +126,9 @@ export function WorkOrderNewPage(): JSX.Element {
               <Select
                 label="Seleccionar aeronave"
                 options={AIRCRAFT_OPTIONS}
-                placeholder="Seleccionar aeronave"
+                placeholder={isLoadingAircraft ? 'Cargando aeronaves...' : 'Seleccionar aeronave'}
                 error={errors.aircraftId?.message}
+                disabled={isLoadingAircraft}
                 required
                 {...register('aircraftId')}
               />
@@ -186,7 +190,7 @@ export function WorkOrderNewPage(): JSX.Element {
             </Button>
             <Button
               type="submit"
-              isLoading={isSubmitting}
+              isLoading={isSubmitting || createWorkOrder.isPending}
               leftIcon={<Save size={15} />}
             >
               Crear OT

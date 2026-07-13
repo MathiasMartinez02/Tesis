@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plane, User, Clock, Calendar, Edit, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plane, User, Clock, Calendar, Edit, ChevronDown, CalendarCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
@@ -8,9 +9,13 @@ import { Timeline } from '@/shared/components/Timeline/Timeline';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { useWorkOrder, useUpdateWorkOrderStatus } from '../hooks/useWorkOrders';
+import { ScheduleInspectionModal } from '../components/ScheduleInspectionModal';
 import { WORK_ORDER_TYPE_LABELS, ROUTES, buildRoute } from '@/constants';
 import { formatDate, formatDateTime, formatFlightHours } from '@/lib/utils';
 import type { WorkOrder, WorkOrderTaskStatus } from '@/types';
+
+// Estados de la OT en los que tiene sentido programar una inspección
+const INSPECTABLE_STATUSES: ReadonlyArray<WorkOrder['status']> = ['EnProceso', 'EnInspeccion'];
 
 const TASK_STATUS_LABELS: Record<WorkOrderTaskStatus, string> = {
   Pendiente: 'Pendiente',
@@ -34,11 +39,14 @@ const STATUS_OPTIONS: Array<{ value: WorkOrder['status']; label: string }> = [
   { value: 'Cancelada', label: 'Cancelada' },
 ];
 
+// MODIFICADO: agrega el botón "Programar Inspección" (visible en estados EnProceso/EnInspeccion) y el modal asociado para dar de alta la inspección desde la propia OT
+// ANTERIOR: solo mostraba el detalle de la OT y el cambio de estado, sin acción para programar inspecciones
 export function WorkOrderDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: order, isLoading, isError, refetch } = useWorkOrder(id ?? '');
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateWorkOrderStatus();
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   if (isLoading) return <PageLoader />;
   if (isError || !order) {
@@ -100,6 +108,16 @@ export function WorkOrderDetailPage(): JSX.Element {
           >
             Editar
           </Button>
+          {INSPECTABLE_STATUSES.includes(order.status) && (
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<CalendarCheck size={14} />}
+              onClick={() => setIsScheduleModalOpen(true)}
+            >
+              Programar Inspección
+            </Button>
+          )}
           <div className="relative group">
             <Button
               size="sm"
@@ -352,6 +370,12 @@ export function WorkOrderDetailPage(): JSX.Element {
           </Card>
         </div>
       </div>
+
+      <ScheduleInspectionModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        workOrderId={order.id}
+      />
     </motion.div>
   );
 }

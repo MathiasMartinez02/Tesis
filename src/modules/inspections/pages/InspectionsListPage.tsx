@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, Plus } from 'lucide-react';
+import { CheckSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
-import { Button } from '@/shared/components/ui/Button';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
@@ -69,6 +68,8 @@ const COLUMNS: TableColumn<Inspection>[] = [
   },
 ];
 
+// MODIFICADO: se quitó el botón "Nueva Inspección" porque el alta ahora se hace desde el detalle de la OT, no desde esta pantalla
+// ANTERIOR: el PageHeader incluía un botón "Nueva Inspección" que navegaba a ROUTES.INSPECTION_NEW
 export function InspectionsListPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -94,11 +95,6 @@ export function InspectionsListPage(): JSX.Element {
       <PageHeader
         title="Inspecciones"
         description={`${filtered.length} inspecciones en el sistema`}
-        actions={
-          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.INSPECTION_NEW)}>
-            Nueva Inspección
-          </Button>
-        }
       />
 
       <div className="flex items-center gap-3">
