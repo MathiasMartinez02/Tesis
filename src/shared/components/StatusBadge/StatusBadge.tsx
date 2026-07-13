@@ -10,6 +10,8 @@ import {
   INVENTORY_STATUS_COLORS,
   WORK_ORDER_PRIORITY_LABELS,
   WORK_ORDER_PRIORITY_COLORS,
+  APPOINTMENT_STATUS_LABELS,
+  APPOINTMENT_STATUS_COLORS,
 } from '@/constants';
 import type {
   WorkOrderStatus,
@@ -17,6 +19,7 @@ import type {
   AircraftStatus,
   InspectionStatus,
   InventoryItemStatus,
+  AppointmentStatus,
 } from '@/types';
 
 type StatusType =
@@ -24,7 +27,8 @@ type StatusType =
   | { type: 'priority'; status: WorkOrderPriority }
   | { type: 'aircraft'; status: AircraftStatus }
   | { type: 'inspection'; status: InspectionStatus }
-  | { type: 'inventory'; status: InventoryItemStatus };
+  | { type: 'inventory'; status: InventoryItemStatus }
+  | { type: 'appointment'; status: AppointmentStatus };
 
 type StatusBadgeProps = StatusType & {
   className?: string;
@@ -55,6 +59,10 @@ export function StatusBadge({ type, status, className, showDot = true }: StatusB
     case 'inventory':
       label = INVENTORY_STATUS_LABELS[status];
       colorClass = INVENTORY_STATUS_COLORS[status];
+      break;
+    case 'appointment':
+      label = APPOINTMENT_STATUS_LABELS[status];
+      colorClass = APPOINTMENT_STATUS_COLORS[status];
       break;
   }
 

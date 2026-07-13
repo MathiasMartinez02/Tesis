@@ -9,3 +9,4 @@ export * from './dashboard.types';
 export * from './report.types';
 export * from './common.types';
 export * from './notification.types';
+export * from './appointment.types';

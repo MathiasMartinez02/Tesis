@@ -29,6 +29,10 @@ export const ROUTES = {
   INSPECTIONS: '/inspecciones',
   INSPECTION_DETAIL: '/inspecciones/:id',
 
+  // Turnos
+  APPOINTMENTS: '/turnos',
+  APPOINTMENT_NEW: '/turnos/nuevo',
+
   // Taller
   WORKSHOP: '/taller',
 

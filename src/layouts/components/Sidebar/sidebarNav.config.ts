@@ -8,6 +8,7 @@ import {
   Package,
   BarChart3,
   Settings,
+  CalendarClock,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/constants';
@@ -52,6 +53,13 @@ export const NAV_SECTIONS: NavSection[] = [
         label: 'Órdenes de Trabajo',
         icon: ClipboardList,
         path: ROUTES.WORK_ORDERS,
+        requiredPermission: 'canManageWorkOrders',
+      },
+      {
+        id: 'appointments',
+        label: 'Turnos',
+        icon: CalendarClock,
+        path: ROUTES.APPOINTMENTS,
         requiredPermission: 'canManageWorkOrders',
       },
       {

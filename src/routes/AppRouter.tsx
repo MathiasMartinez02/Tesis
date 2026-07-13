@@ -100,6 +100,18 @@ const InspectionDetailPage = lazy(() =>
   }))
 );
 
+const AppointmentsListPage = lazy(() =>
+  import('@/modules/appointments/pages/AppointmentsListPage').then((m) => ({
+    default: m.AppointmentsListPage,
+  }))
+);
+
+const AppointmentNewPage = lazy(() =>
+  import('@/modules/appointments/pages/AppointmentNewPage').then((m) => ({
+    default: m.AppointmentNewPage,
+  }))
+);
+
 const WorkshopPage = lazy(() =>
   import('@/modules/workshop/pages/WorkshopPage').then((m) => ({ default: m.WorkshopPage }))
 );
@@ -278,6 +290,22 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <InspectionDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.APPOINTMENTS,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AppointmentsListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.APPOINTMENT_NEW,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AppointmentNewPage />
               </Suspense>
             ),
           },

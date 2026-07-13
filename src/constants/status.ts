@@ -9,6 +9,7 @@ import type {
   InventoryCategory,
   ChecklistItemStatus,
   MovementType,
+  AppointmentStatus,
 } from '@/types';
 
 // ─── Work Orders ──────────────────────────────────────────────────────────────
@@ -144,6 +145,22 @@ export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
   Reserva: 'Reserva',
   Devolucion: 'Devolución',
   Ajuste: 'Ajuste',
+};
+
+// ─── Appointments (Turnos) ─────────────────────────────────────────────────────
+
+export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
+  Solicitado: 'Solicitado',
+  Confirmado: 'Confirmado',
+  Cancelado: 'Cancelado',
+  ConvertidoOT: 'Convertido a OT',
+};
+
+export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
+  Solicitado: 'bg-amber-50 text-amber-700 border-amber-200',
+  Confirmado: 'bg-blue-50 text-blue-700 border-blue-200',
+  Cancelado: 'bg-red-50 text-red-700 border-red-200',
+  ConvertidoOT: 'bg-emerald-50 text-emerald-700 border-emerald-200',
 };
 
 // ─── Checklist ────────────────────────────────────────────────────────────────
