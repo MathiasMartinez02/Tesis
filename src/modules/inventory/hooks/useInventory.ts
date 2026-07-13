@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@/services/api/inventory.service';
-import type { InventoryFilters, CreateInventoryItemPayload, CreateInventoryMovementPayload } from '@/types';
+import type {
+  InventoryFilters,
+  CreateInventoryItemPayload,
+  CreateInventoryMovementPayload,
+  UpdateInventoryItemPayload,
+} from '@/types';
 import { useUIStore } from '@/store/uiStore';
 
 export const INVENTORY_QUERY_KEY = ['inventory'] as const;
@@ -44,6 +49,42 @@ export function useCreateInventoryItem() {
     },
     onError: (err: Error) => {
       addToast({ type: 'error', title: 'Error al registrar ítem', description: err.message });
+    },
+  });
+}
+
+// Actualiza los datos editables de un ítem existente (descripción, ubicación, stock mínimo, costo, certificación)
+export function useUpdateInventoryItem() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateInventoryItemPayload }) =>
+      inventoryService.update(id, payload),
+    onSuccess: (_, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: [...INVENTORY_QUERY_KEY, id] });
+      void queryClient.invalidateQueries({ queryKey: INVENTORY_QUERY_KEY });
+      addToast({ type: 'success', title: 'Ítem actualizado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar ítem', description: err.message });
+    },
+  });
+}
+
+// Elimina un ítem de inventario; si el backend rechaza la baja por stock disponible, el mensaje de negocio se muestra tal cual en el toast
+export function useDeleteInventoryItem() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: (id: string) => inventoryService.delete(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: INVENTORY_QUERY_KEY });
+      addToast({ type: 'success', title: 'Ítem eliminado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'No se pudo eliminar el ítem', description: err.message });
     },
   });
 }

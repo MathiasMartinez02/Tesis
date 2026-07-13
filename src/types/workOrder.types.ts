@@ -36,6 +36,7 @@ export interface WorkOrder {
   description: string;
   estimatedHours: number;
   actualHours: number;
+  intakeDate: string;
   startDate?: string;
   estimatedEndDate: string;
   completedDate?: string;
@@ -129,12 +130,14 @@ export interface CreateWorkOrderPayload {
   aircraftId: string;
   description: string;
   estimatedHours: number;
+  intakeDate: string;
   estimatedEndDate: string;
 }
 
 export interface UpdateWorkOrderPayload {
   description: string;
   estimatedHours: number;
+  intakeDate: string;
   estimatedEndDate: string;
   priority: WorkOrderPriority;
 }

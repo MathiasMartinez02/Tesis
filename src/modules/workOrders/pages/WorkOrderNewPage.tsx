@@ -14,7 +14,8 @@ import type { SelectOption } from '@/types';
 import { useCreateWorkOrder } from '../hooks/useWorkOrders';
 import { useAircraft } from '@/modules/aircraft/hooks/useAircraft';
 
-// Corregido: los valores del enum estaban en snake_case/minusculas y no coincidian con WorkOrderType/WorkOrderPriority reales (PascalCase), lo que impedia pasar "data" directamente a useCreateWorkOrder
+// MODIFICADO: agrega intakeDate (fecha de ingreso), requerida, para registrar cuándo entró la aeronave al taller
+// ANTERIOR: los valores del enum estaban en snake_case/minusculas y no coincidian con WorkOrderType/WorkOrderPriority reales (PascalCase), lo que impedia pasar "data" directamente a useCreateWorkOrder
 const workOrderSchema = z.object({
   type: z.enum([
     'Inspeccion50h', 'Inspeccion100h', 'Inspeccion200h',
@@ -24,6 +25,7 @@ const workOrderSchema = z.object({
   aircraftId: z.string().min(1, 'Seleccionar aeronave'),
   description: z.string().min(10, 'Mínimo 10 caracteres'),
   estimatedHours: z.number().min(0.5, 'Mínimo 0.5 horas').max(999),
+  intakeDate: z.string().min(1, 'Fecha requerida'),
   estimatedEndDate: z.string().min(1, 'Fecha requerida'),
 });
 
@@ -58,6 +60,7 @@ export function WorkOrderNewPage(): JSX.Element {
     defaultValues: {
       priority: 'Media',
       estimatedHours: 6,
+      intakeDate: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -166,6 +169,13 @@ export function WorkOrderNewPage(): JSX.Element {
                     error={errors.estimatedHours?.message}
                     required
                     {...register('estimatedHours', { valueAsNumber: true })}
+                  />
+                  <Input
+                    type="date"
+                    label="Fecha de ingreso"
+                    error={errors.intakeDate?.message}
+                    required
+                    {...register('intakeDate')}
                   />
                   <Input
                     type="date"

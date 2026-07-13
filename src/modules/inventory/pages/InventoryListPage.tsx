@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, AlertTriangle } from 'lucide-react';
+import { Package, Plus, AlertTriangle, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
@@ -9,11 +9,36 @@ import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { KPICard } from '@/shared/components/KPICard/KPICard';
 import { useInventory } from '../hooks/useInventory';
-import { ROUTES, INVENTORY_CATEGORY_LABELS } from '@/constants';
+import { ROUTES, INVENTORY_CATEGORY_LABELS, buildRoute } from '@/constants';
 import { formatCurrency } from '@/lib/utils';
 import type { InventoryItem, TableColumn } from '@/types';
 
-const COLUMNS: TableColumn<InventoryItem>[] = [
+// Recibe la función de navegación para poder ir a la edición sin propagar el click al row (que navega al detalle)
+function buildColumns(navigate: (path: string) => void): TableColumn<InventoryItem>[] {
+  return [
+  ...BASE_COLUMNS,
+  {
+    key: 'id',
+    header: '',
+    width: '90px',
+    render: (_, row) => (
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={`Editar ${row.partNumber}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(buildRoute(ROUTES.INVENTORY_ITEM_EDIT, { id: row.id }));
+        }}
+      >
+        <Edit size={14} />
+      </Button>
+    ),
+  },
+  ];
+}
+
+const BASE_COLUMNS: TableColumn<InventoryItem>[] = [
   {
     key: 'partNumber',
     header: 'N° Parte',
@@ -77,6 +102,8 @@ const COLUMNS: TableColumn<InventoryItem>[] = [
   },
 ];
 
+// MODIFICADO: agrega navegación al detalle al hacer click en una fila y un botón "Editar" directo por fila
+// ANTERIOR: la tabla solo mostraba los datos, sin navegación ni acciones por fila
 export function InventoryListPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -94,6 +121,11 @@ export function InventoryListPage(): JSX.Element {
           item.partNumber.toLowerCase().includes(search.toLowerCase())
       )
     : items;
+
+  // Navega al detalle del ítem al hacer click en una fila de la tabla
+  const handleRowClick = (row: InventoryItem): void => {
+    navigate(buildRoute(ROUTES.INVENTORY_ITEM_DETAIL, { id: row.id }));
+  };
 
   return (
     <motion.div
@@ -156,7 +188,8 @@ export function InventoryListPage(): JSX.Element {
       {!isLoading && (
         <DataTable<InventoryItem>
           data={filtered}
-          columns={COLUMNS}
+          columns={buildColumns(navigate)}
+          onRowClick={handleRowClick}
           emptyMessage="Sin ítems en inventario"
           emptyDescription="No hay ítems que coincidan con la búsqueda."
         />

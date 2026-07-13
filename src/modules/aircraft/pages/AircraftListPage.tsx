@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Plane } from 'lucide-react';
+import { Plus, Plane, Pencil, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
@@ -21,7 +21,19 @@ const CATEGORY_LABELS = {
   Ultraliviano: 'Ultraliviano',
 } as const;
 
-function AircraftCard({ aircraft, onClick }: { aircraft: Aircraft; onClick: () => void }): JSX.Element {
+// MODIFICADO: agrega props onEdit y onViewHistory para los botones "Editar" y "Ver historial" de cada tarjeta
+// ANTERIOR: solo recibía onClick para navegar al detalle
+function AircraftCard({
+  aircraft,
+  onClick,
+  onEdit,
+  onViewHistory,
+}: {
+  aircraft: Aircraft;
+  onClick: () => void;
+  onEdit: () => void;
+  onViewHistory: () => void;
+}): JSX.Element {
   const daysToInspection = aircraft.nextInspectionDue ? daysUntil(aircraft.nextInspectionDue) : null;
   const isInspectionUrgent = daysToInspection !== null && daysToInspection <= 30;
 
@@ -110,6 +122,32 @@ function AircraftCard({ aircraft, onClick }: { aircraft: Aircraft; onClick: () =
             : `Inspección en ${daysToInspection} días`}
         </div>
       )}
+
+      {/* Acciones: editar y ver historial de mantenimiento (navegan sin disparar el onClick de la tarjeta) */}
+      <div className="mt-3 flex gap-2 border-t border-surface-100 pt-3 dark:border-surface-700">
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon={<Pencil size={13} />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+        >
+          Editar
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon={<History size={13} />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewHistory();
+          }}
+        >
+          Ver historial
+        </Button>
+      </div>
     </motion.article>
   );
 }
@@ -174,6 +212,8 @@ export function AircraftListPage(): JSX.Element {
               key={aircraft.id}
               aircraft={aircraft}
               onClick={() => navigate(buildRoute(ROUTES.AIRCRAFT_DETAIL, { id: aircraft.id }))}
+              onEdit={() => navigate(buildRoute(ROUTES.AIRCRAFT_EDIT, { id: aircraft.id }))}
+              onViewHistory={() => navigate(buildRoute(ROUTES.AIRCRAFT_DETAIL, { id: aircraft.id }))}
             />
           ))}
         </div>

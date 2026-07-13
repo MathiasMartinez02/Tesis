@@ -1,19 +1,44 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plane, Cog, Clock, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plane,
+  Cog,
+  Clock,
+  Calendar,
+  FileText,
+  AlertTriangle,
+  Pencil,
+  Wrench,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
-import { useAircraftById } from '../hooks/useAircraft';
-import { ROUTES } from '@/constants';
+import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
+import { Spinner } from '@/shared/components/ui/Spinner';
+import {
+  useAircraftById,
+  useAircraftMaintenanceHistory,
+} from '../hooks/useAircraft';
+import { AddAircraftDocumentModal } from '../components/AddAircraftDocumentModal';
+import { ROUTES, buildRoute, WORK_ORDER_TYPE_LABELS } from '@/constants';
 import { formatDate, formatFlightHours, daysUntil } from '@/lib/utils';
 
+// MODIFICADO: agrega botón "Editar" en el header, sección "Historial de mantenimiento" con las OTs de la
+// aeronave y conecta el botón "Subir documento" a un modal que crea documentos vía useAddAircraftDocument
+// ANTERIOR: solo mostraba datos de la aeronave, sin edición, sin historial y con el botón de documentos sin onClick
 export function AircraftDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: aircraft, isLoading, isError, refetch } = useAircraftById(id ?? '');
+  const {
+    data: maintenanceHistory,
+    isLoading: isLoadingHistory,
+  } = useAircraftMaintenanceHistory(id ?? '');
+  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
 
   if (isLoading) return <PageLoader />;
   if (isError || !aircraft) {
@@ -63,6 +88,14 @@ export function AircraftDetailPage(): JSX.Element {
             </div>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          leftIcon={<Pencil size={14} />}
+          onClick={() => navigate(buildRoute(ROUTES.AIRCRAFT_EDIT, { id: aircraft.id }))}
+        >
+          Editar
+        </Button>
       </div>
 
       {/* Alertas de vencimiento */}
@@ -181,6 +214,53 @@ export function AircraftDetailPage(): JSX.Element {
               </CardBody>
             </Card>
           </div>
+
+          {/* Historial de mantenimiento: OTs asociadas a la aeronave */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de mantenimiento</CardTitle>
+              <Wrench size={16} className="text-surface-400" />
+            </CardHeader>
+            <CardBody>
+              {isLoadingHistory ? (
+                <div className="flex h-20 items-center justify-center">
+                  <Spinner size="md" />
+                </div>
+              ) : !maintenanceHistory || maintenanceHistory.length === 0 ? (
+                <EmptyState
+                  icon={Wrench}
+                  title="Sin órdenes de trabajo"
+                  description="Esta aeronave todavía no tiene OTs de mantenimiento registradas."
+                />
+              ) : (
+                <div className="divide-y divide-surface-100 dark:divide-surface-700">
+                  {maintenanceHistory.map((order) => (
+                    <button
+                      key={order.id}
+                      type="button"
+                      onClick={() =>
+                        navigate(buildRoute(ROUTES.WORK_ORDER_DETAIL, { id: order.id }))
+                      }
+                      className="flex w-full items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-surface-50 dark:hover:bg-surface-800/50"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-aviation-600">{order.number}</p>
+                        <p className="text-xs text-surface-500">
+                          {WORK_ORDER_TYPE_LABELS[order.type] ?? order.type}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-surface-500">
+                          {formatDate(order.completedDate ?? order.estimatedEndDate)}
+                        </span>
+                        <StatusBadge type="workOrder" status={order.status} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
         </div>
 
         {/* Sidebar */}
@@ -242,23 +322,51 @@ export function AircraftDetailPage(): JSX.Element {
             </CardBody>
           </Card>
 
-          {/* Documentación placeholder */}
+          {/* Documentación */}
           <Card>
             <CardHeader>
               <CardTitle>Documentación</CardTitle>
               <FileText size={16} className="text-surface-400" />
             </CardHeader>
             <CardBody>
-              <p className="text-sm text-surface-400 italic">
-                Sin documentos cargados
-              </p>
-              <Button variant="outline" size="sm" className="mt-3 w-full">
+              {aircraft.documents.length === 0 ? (
+                <p className="text-sm text-surface-400 italic">Sin documentos cargados</p>
+              ) : (
+                <ul className="space-y-2">
+                  {aircraft.documents.map((doc) => (
+                    <li
+                      key={doc.id}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-surface-200 px-3 py-2 text-sm dark:border-surface-700"
+                    >
+                      <div>
+                        <p className="font-medium text-surface-900 dark:text-white">{doc.name}</p>
+                        <p className="text-xs text-surface-500">{doc.type}</p>
+                      </div>
+                      {doc.isExpired && (
+                        <span className="text-xs font-medium text-red-600">Vencido</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 w-full"
+                onClick={() => setIsDocumentModalOpen(true)}
+              >
                 Subir documento
               </Button>
             </CardBody>
           </Card>
         </div>
       </div>
+
+      <AddAircraftDocumentModal
+        aircraftId={aircraft.id}
+        isOpen={isDocumentModalOpen}
+        onClose={() => setIsDocumentModalOpen(false)}
+      />
     </motion.div>
   );
 }

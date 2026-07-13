@@ -74,6 +74,16 @@ export interface CreateInventoryMovementPayload {
   reason: string;
 }
 
+/** Payload de edicion de un item de inventario (PUT /inventory/{id}) */
+export interface UpdateInventoryItemPayload {
+  description: string;
+  location: string;
+  minimumStock: number;
+  unitCost: number;
+  certificateNumber?: string;
+  expiryDate?: string;
+}
+
 /** Alias de compatibilidad */
 export type InventoryItemCategory = InventoryCategory;
 export type InventoryItemStatus = InventoryStatus;

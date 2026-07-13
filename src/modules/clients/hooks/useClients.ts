@@ -57,3 +57,22 @@ export function useUpdateClient() {
     },
   });
 }
+
+// Activa o desactiva un cliente llamando al endpoint PATCH /clients/{id}/status
+export function useUpdateClientStatus() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      clientsService.updateStatus(id, isActive),
+    onSuccess: (_, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: CLIENTS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: [...CLIENTS_QUERY_KEY, id] });
+      addToast({ type: 'success', title: 'Estado del cliente actualizado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar estado', description: err.message });
+    },
+  });
+}

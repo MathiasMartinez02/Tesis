@@ -4,12 +4,14 @@ import type {
   InventoryFilters,
   CreateInventoryItemPayload,
   CreateInventoryMovementPayload,
+  UpdateInventoryItemPayload,
   ApiResponse,
   PaginatedResult,
 } from '@/types';
 import { MOCK_INVENTORY } from '@/mocks/inventory.mock';
 import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
+import { isAxiosError } from 'axios';
 
 // MODIFICADO: agrega el switch ENV.ENABLE_MOCK_API para alternar entre datos mockeados y la API real, igual que aircraft.service.ts y workOrders.service.ts
 // ANTERIOR: siempre llamaba a la API real, sin soporte de modo mock
@@ -104,17 +106,9 @@ export const inventoryService = {
     return data.data;
   },
 
-  async update(
-    id: string,
-    payload: {
-      description: string;
-      location: string;
-      minimumStock: number;
-      unitCost: number;
-      certificateNumber?: string;
-      expiryDate?: string;
-    }
-  ): Promise<void> {
+  // MODIFICADO: el tipo del payload ahora referencia UpdateInventoryItemPayload (@/types) en vez de un objeto inline, para poder reutilizarlo desde useUpdateInventoryItem/InventoryItemEditPage
+  // ANTERIOR: el payload se tipaba con un objeto inline definido en el propio metodo
+  async update(id: string, payload: UpdateInventoryItemPayload): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));
       const item = MOCK_INVENTORY.find((i) => i.id === id);
@@ -125,6 +119,33 @@ export const inventoryService = {
 
     const { data } = await apiClient.put<ApiResponse<null>>(`/inventory/${id}`, payload);
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar ítem');
+  },
+
+  // Elimina un item de inventario; el backend rechaza la baja con un error de negocio (400) si currentStock > 0,
+  // por lo que se captura el AxiosError y se relanza con el mensaje real que viene en el body en vez del genérico de axios
+  async delete(id: string): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 400));
+      const item = MOCK_INVENTORY.find((i) => i.id === id);
+      if (!item) throw new Error('Ítem no encontrado');
+      if (item.currentStock > 0) {
+        throw new Error('No se puede eliminar un ítem con stock disponible. Retire el stock antes de eliminarlo.');
+      }
+      const index = MOCK_INVENTORY.indexOf(item);
+      MOCK_INVENTORY.splice(index, 1);
+      return;
+    }
+
+    try {
+      const { data } = await apiClient.delete<ApiResponse<null>>(`/inventory/${id}`);
+      if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al eliminar ítem');
+    } catch (err) {
+      if (isAxiosError<ApiResponse<null>>(err) && err.response?.data) {
+        const backendMessage = err.response.data.errors?.[0] ?? err.response.data.message;
+        if (backendMessage) throw new Error(backendMessage);
+      }
+      throw err;
+    }
   },
 
   async addMovement(

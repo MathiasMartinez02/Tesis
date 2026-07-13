@@ -58,6 +58,12 @@ const AircraftDetailPage = lazy(() =>
   }))
 );
 
+const AircraftEditPage = lazy(() =>
+  import('@/modules/aircraft/pages/AircraftEditPage').then((m) => ({
+    default: m.AircraftEditPage,
+  }))
+);
+
 const ClientsListPage = lazy(() =>
   import('@/modules/clients/pages/ClientsListPage').then((m) => ({
     default: m.ClientsListPage,
@@ -67,6 +73,18 @@ const ClientsListPage = lazy(() =>
 const ClientNewPage = lazy(() =>
   import('@/modules/clients/pages/ClientNewPage').then((m) => ({
     default: m.ClientNewPage,
+  }))
+);
+
+const ClientDetailPage = lazy(() =>
+  import('@/modules/clients/pages/ClientDetailPage').then((m) => ({
+    default: m.ClientDetailPage,
+  }))
+);
+
+const ClientEditPage = lazy(() =>
+  import('@/modules/clients/pages/ClientEditPage').then((m) => ({
+    default: m.ClientEditPage,
   }))
 );
 
@@ -95,6 +113,18 @@ const InventoryListPage = lazy(() =>
 const InventoryItemNewPage = lazy(() =>
   import('@/modules/inventory/pages/InventoryItemNewPage').then((m) => ({
     default: m.InventoryItemNewPage,
+  }))
+);
+
+const InventoryItemDetailPage = lazy(() =>
+  import('@/modules/inventory/pages/InventoryItemDetailPage').then((m) => ({
+    default: m.InventoryItemDetailPage,
+  }))
+);
+
+const InventoryItemEditPage = lazy(() =>
+  import('@/modules/inventory/pages/InventoryItemEditPage').then((m) => ({
+    default: m.InventoryItemEditPage,
   }))
 );
 
@@ -196,6 +226,14 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTES.AIRCRAFT_EDIT,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AircraftEditPage />
+              </Suspense>
+            ),
+          },
+          {
             path: ROUTES.CLIENTS,
             element: (
               <Suspense fallback={<PageLoader />}>
@@ -208,6 +246,22 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ClientNewPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.CLIENT_DETAIL,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ClientDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.CLIENT_EDIT,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ClientEditPage />
               </Suspense>
             ),
           },
@@ -248,6 +302,22 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <InventoryItemNewPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.INVENTORY_ITEM_DETAIL,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <InventoryItemDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.INVENTORY_ITEM_EDIT,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <InventoryItemEditPage />
               </Suspense>
             ),
           },

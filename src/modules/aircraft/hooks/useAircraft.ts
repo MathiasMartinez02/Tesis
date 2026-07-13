@@ -4,6 +4,8 @@ import type {
   AircraftFilters,
   Aircraft,
   CreateAircraftPayload,
+  UpdateAircraftPayload,
+  CreateAircraftDocumentPayload,
   CreateFlightRecordPayload,
 } from '@/types';
 import { useUIStore } from '@/store/uiStore';
@@ -45,6 +47,25 @@ export function useCreateAircraft() {
   });
 }
 
+// Actualiza los datos completos de una aeronave existente y refresca su detalle y listado
+export function useUpdateAircraft() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAircraftPayload }) =>
+      aircraftService.update(id, payload),
+    onSuccess: (_, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: [...AIRCRAFT_QUERY_KEY, id] });
+      void queryClient.invalidateQueries({ queryKey: AIRCRAFT_QUERY_KEY });
+      addToast({ type: 'success', title: 'Aeronave actualizada' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar aeronave', description: err.message });
+    },
+  });
+}
+
 export function useUpdateAircraftStatus() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);
@@ -59,6 +80,33 @@ export function useUpdateAircraftStatus() {
     },
     onError: (err: Error) => {
       addToast({ type: 'error', title: 'Error al actualizar estado', description: err.message });
+    },
+  });
+}
+
+// Trae el historial de OTs de mantenimiento asociadas a una aeronave
+export function useAircraftMaintenanceHistory(aircraftId: string) {
+  return useQuery({
+    queryKey: [...AIRCRAFT_QUERY_KEY, aircraftId, 'maintenance-history'],
+    queryFn: () => aircraftService.getMaintenanceHistory(aircraftId),
+    enabled: !!aircraftId,
+  });
+}
+
+// Sube un documento nuevo para la aeronave y refresca su detalle al terminar
+export function useAddAircraftDocument(aircraftId: string) {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: (payload: CreateAircraftDocumentPayload) =>
+      aircraftService.addDocument(aircraftId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [...AIRCRAFT_QUERY_KEY, aircraftId] });
+      addToast({ type: 'success', title: 'Documento cargado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al subir documento', description: err.message });
     },
   });
 }

@@ -36,6 +36,7 @@ export const ROUTES = {
   INVENTORY: '/panol',
   INVENTORY_ITEM_NEW: '/panol/nuevo',
   INVENTORY_ITEM_DETAIL: '/panol/:id',
+  INVENTORY_ITEM_EDIT: '/panol/:id/editar',
 
   // Reportes
   REPORTS: '/reportes',

@@ -94,4 +94,18 @@ export const clientsService = {
     const { data } = await apiClient.put<ApiResponse<null>>(`/clients/${id}`, payload);
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar cliente');
   },
+
+  // Activa o desactiva el cliente mediante PATCH /clients/{id}/status
+  async updateStatus(id: string, isActive: boolean): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 300));
+      const client = MOCK_CLIENTS.find((c) => c.id === id);
+      if (!client) throw new Error('Cliente no encontrado');
+      client.isActive = isActive;
+      return;
+    }
+
+    const { data } = await apiClient.patch<ApiResponse<null>>(`/clients/${id}/status`, { isActive });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar estado');
+  },
 };

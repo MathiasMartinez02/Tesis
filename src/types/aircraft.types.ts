@@ -102,3 +102,14 @@ export interface CreateFlightRecordPayload {
   destination: string;
   notes?: string;
 }
+
+/** UpdateAircraftPayload — payload para PUT /aircraft/{id}, mismos campos que la creación */
+export type UpdateAircraftPayload = CreateAircraftPayload;
+
+/** CreateAircraftDocumentPayload — payload para POST /aircraft/{id}/documents */
+export interface CreateAircraftDocumentPayload {
+  type: string;
+  name: string;
+  fileUrl: string;
+  expiryDate?: string;
+}

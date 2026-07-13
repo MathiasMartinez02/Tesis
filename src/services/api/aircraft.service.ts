@@ -6,7 +6,10 @@ import type {
   AircraftDocument,
   FlightRecord,
   CreateAircraftPayload,
+  UpdateAircraftPayload,
+  CreateAircraftDocumentPayload,
   CreateFlightRecordPayload,
+  WorkOrder,
   ApiResponse,
   PaginatedResult,
 } from '@/types';
@@ -72,6 +75,12 @@ export const aircraftService = {
     return data.data;
   },
 
+  // Actualiza los datos completos de una aeronave existente
+  async update(id: string, payload: UpdateAircraftPayload): Promise<void> {
+    const { data } = await apiClient.put<ApiResponse<null>>(`/aircraft/${id}`, payload);
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar aeronave');
+  },
+
   async updateStatus(id: string, status: Aircraft['status']): Promise<void> {
     const { data } = await apiClient.patch<ApiResponse<null>>(`/aircraft/${id}/status`, { status });
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar estado');
@@ -86,9 +95,11 @@ export const aircraftService = {
     return data.data;
   },
 
+  // MODIFICADO: usa el tipo exportado CreateAircraftDocumentPayload en vez de un objeto inline
+  // ANTERIOR: payload: { type: string; name: string; fileUrl: string; expiryDate?: string }
   async addDocument(
     id: string,
-    payload: { type: string; name: string; fileUrl: string; expiryDate?: string }
+    payload: CreateAircraftDocumentPayload
   ): Promise<AircraftDocument> {
     const { data } = await apiClient.post<ApiResponse<AircraftDocument>>(
       `/aircraft/${id}/documents`,
@@ -110,8 +121,10 @@ export const aircraftService = {
     return data.data;
   },
 
-  async getMaintenanceHistory(id: string): Promise<unknown[]> {
-    const { data } = await apiClient.get<ApiResponse<unknown[]>>(`/aircraft/${id}/maintenance-history`);
+  // MODIFICADO: tipa el retorno como WorkOrder[] (numero, tipo, estado y fechas de cada OT) en vez de unknown[]
+  // ANTERIOR: Promise<unknown[]>
+  async getMaintenanceHistory(id: string): Promise<WorkOrder[]> {
+    const { data } = await apiClient.get<ApiResponse<WorkOrder[]>>(`/aircraft/${id}/maintenance-history`);
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar historial');
     return data.data;
   },

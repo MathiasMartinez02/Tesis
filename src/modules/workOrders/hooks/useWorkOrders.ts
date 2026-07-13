@@ -51,9 +51,12 @@ export function useCreateWorkOrder() {
 
 // ─── Update completo (campos + mecánicos diff) ────────────────────────────────
 
+// MODIFICADO: incluye intakeDate para poder editar la fecha de ingreso de la OT junto con el resto de los campos
+// ANTERIOR: solo tenía description, estimatedHours, estimatedEndDate y priority
 type UpdatePayload = {
   description: string;
   estimatedHours: number;
+  intakeDate: string;
   estimatedEndDate: string;
   priority: WorkOrderPriority;
 };

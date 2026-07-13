@@ -1,23 +1,28 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Plus, Plane, ClipboardList } from 'lucide-react';
+import { Users, Plus, Plane, ClipboardList, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
 import { Spinner } from '@/shared/components/ui/Spinner';
-import { ROUTES } from '@/constants';
+import { ROUTES, buildRoute } from '@/constants';
 import { useClients } from '../hooks/useClients';
 import type { Client, ClientFilters } from '@/types';
 
+// MODIFICADO: agrega navegacion al detalle del cliente al hacer click en la tarjeta y un boton "Editar" que va directo a CLIENT_EDIT sin pasar por el detalle
+// ANTERIOR: la tarjeta no tenia onClick ni boton de edicion, solo mostraba los datos
 function ClientCard({ client }: { client: Client }): JSX.Element {
+  const navigate = useNavigate();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      onClick={() => navigate(buildRoute(ROUTES.CLIENT_DETAIL, { id: client.id }))}
       className="cursor-pointer rounded-xl border border-surface-200 bg-white p-5 shadow-card transition-shadow hover:shadow-card-hover dark:border-surface-700 dark:bg-surface-800"
     >
       <div className="flex items-start justify-between gap-3">
@@ -30,9 +35,22 @@ function ClientCard({ client }: { client: Client }): JSX.Element {
             <p className="text-xs text-surface-500">{client.taxId}</p>
           </div>
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${client.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
-          {client.isActive ? 'Activo' : 'Inactivo'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${client.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
+            {client.isActive ? 'Activo' : 'Inactivo'}
+          </span>
+          <button
+            type="button"
+            aria-label={`Editar ${client.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(buildRoute(ROUTES.CLIENT_EDIT, { id: client.id }));
+            }}
+            className="rounded p-1 text-surface-400 hover:bg-surface-100 hover:text-aviation-600 dark:hover:bg-surface-700"
+          >
+            <Pencil size={14} />
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 space-y-1.5 text-sm text-surface-600 dark:text-surface-400">

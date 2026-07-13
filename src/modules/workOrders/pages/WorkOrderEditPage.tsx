@@ -18,10 +18,13 @@ import { useWorkOrder, useUpdateWorkOrderFull } from '../hooks/useWorkOrders';
 import { useUsers } from '@/hooks/useUsers';
 import type { SelectOption, AssignedMechanic } from '@/types';
 
+// MODIFICADO: agrega intakeDate (fecha de ingreso) como campo editable
+// ANTERIOR: solo incluía priority, description, estimatedHours y estimatedEndDate
 const editSchema = z.object({
   priority: z.enum(['Baja', 'Media', 'Alta', 'Critica']),
   description: z.string().min(10, 'Mínimo 10 caracteres'),
   estimatedHours: z.number().min(0.5, 'Mínimo 0.5 horas').max(999),
+  intakeDate: z.string().min(1, 'Fecha requerida'),
   estimatedEndDate: z.string().min(1, 'Fecha requerida'),
 });
 
@@ -63,6 +66,7 @@ export function WorkOrderEditPage(): JSX.Element {
         priority: order.priority,
         description: order.description,
         estimatedHours: order.estimatedHours,
+        intakeDate: order.intakeDate ? order.intakeDate.split('T')[0] : '',
         estimatedEndDate: order.estimatedEndDate
           ? order.estimatedEndDate.split('T')[0]
           : '',
@@ -108,6 +112,7 @@ export function WorkOrderEditPage(): JSX.Element {
         payload: {
           description: data.description,
           estimatedHours: data.estimatedHours,
+          intakeDate: data.intakeDate,
           estimatedEndDate: data.estimatedEndDate,
           priority: data.priority,
         },
@@ -209,6 +214,13 @@ export function WorkOrderEditPage(): JSX.Element {
                     error={errors.estimatedHours?.message}
                     required
                     {...register('estimatedHours', { valueAsNumber: true })}
+                  />
+                  <Input
+                    type="date"
+                    label="Fecha de ingreso"
+                    error={errors.intakeDate?.message}
+                    required
+                    {...register('intakeDate')}
                   />
                   <Input
                     type="date"

@@ -4,14 +4,21 @@ import { Plus, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
+import { Card } from '@/shared/components/ui/Card';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { WorkOrderFiltersPanel } from '../components/WorkOrderFiltersPanel';
 import { useWorkOrders } from '../hooks/useWorkOrders';
-import { buildRoute, ROUTES, WORK_ORDER_TYPE_LABELS } from '@/constants';
+import {
+  buildRoute,
+  ROUTES,
+  WORK_ORDER_TYPE_LABELS,
+  WORK_ORDER_STATUS_LABELS,
+  WORK_ORDER_PRIORITY_LABELS,
+} from '@/constants';
 import type { WorkOrder, WorkOrderFilters, TableColumn } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, downloadBlob } from '@/lib/utils';
 
 const COLUMNS: TableColumn<WorkOrder>[] = [
   {
@@ -95,6 +102,47 @@ const COLUMNS: TableColumn<WorkOrder>[] = [
 
 const EMPTY_FILTERS: WorkOrderFilters = {};
 
+// Escapa un valor para insertarlo como celda CSV (envuelve en comillas si contiene comas, comillas o saltos de línea)
+function csvEscape(value: string): string {
+  if (/[",\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+// Genera un CSV con las columnas visibles del listado (numero, tipo, aeronave, cliente, estado, prioridad, ingreso, límite) y lo descarga en el navegador
+function exportWorkOrdersToCsv(orders: WorkOrder[]): void {
+  const headers = [
+    'N° OT',
+    'Tipo',
+    'Aeronave',
+    'Cliente',
+    'Estado',
+    'Prioridad',
+    'Fecha de ingreso',
+    'Fecha estimada de fin',
+  ];
+  const rows = orders.map((o) =>
+    [
+      o.number,
+      WORK_ORDER_TYPE_LABELS[o.type],
+      o.aircraftRegistration,
+      o.clientName,
+      WORK_ORDER_STATUS_LABELS[o.status],
+      WORK_ORDER_PRIORITY_LABELS[o.priority],
+      o.intakeDate ? formatDate(o.intakeDate) : '',
+      formatDate(o.estimatedEndDate),
+    ]
+      .map((cell) => csvEscape(String(cell)))
+      .join(',')
+  );
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([`﻿${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, `ordenes-de-trabajo-${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// MODIFICADO: agrega contadores de Pendientes/En proceso/Finalizadas sobre los datos cargados y conecta el botón Exportar a una descarga CSV del lado del cliente
+// ANTERIOR: no tenía contadores y el botón Exportar no tenía onClick
 export function WorkOrdersListPage(): JSX.Element {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<WorkOrderFilters>(EMPTY_FILTERS);
@@ -114,6 +162,16 @@ export function WorkOrdersListPage(): JSX.Element {
     setFilters(newFilters);
     setPage(1); // Reset paginación al filtrar
   };
+
+  // Descarga un CSV con las OT actualmente cargadas (respetando los filtros aplicados)
+  const handleExport = (): void => {
+    exportWorkOrdersToCsv(data?.data ?? []);
+  };
+
+  const orders = data?.data ?? [];
+  const pendingCount = orders.filter((o) => o.status === 'Pendiente').length;
+  const inProgressCount = orders.filter((o) => o.status === 'EnProceso').length;
+  const completedCount = orders.filter((o) => o.status === 'Finalizada').length;
 
   if (isError) {
     return (
@@ -140,6 +198,7 @@ export function WorkOrdersListPage(): JSX.Element {
               variant="outline"
               size="sm"
               leftIcon={<Download size={15} />}
+              onClick={handleExport}
             >
               Exportar
             </Button>
@@ -153,6 +212,22 @@ export function WorkOrdersListPage(): JSX.Element {
           </>
         }
       />
+
+      {/* Contadores por estado (sobre los datos cargados en la página actual) */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          { label: 'Pendientes', count: pendingCount, color: 'text-amber-600' },
+          { label: 'En proceso', count: inProgressCount, color: 'text-blue-600' },
+          { label: 'Finalizadas', count: completedCount, color: 'text-emerald-600' },
+        ].map((stat) => (
+          <Card key={stat.label} padding="sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-surface-400">
+              {stat.label}
+            </p>
+            <p className={`mt-1 text-3xl font-bold ${stat.color}`}>{stat.count}</p>
+          </Card>
+        ))}
+      </div>
 
       {/* Filtros */}
       <div className="rounded-xl border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-800">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plane, User, Clock, Calendar, Edit, ChevronDown, CalendarCheck } from 'lucide-react';
+import { ArrowLeft, Plane, User, Clock, Calendar, Edit, ChevronDown, CalendarCheck, Ban } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
@@ -16,6 +16,11 @@ import type { WorkOrder, WorkOrderTaskStatus } from '@/types';
 
 // Estados de la OT en los que tiene sentido programar una inspección
 const INSPECTABLE_STATUSES: ReadonlyArray<WorkOrder['status']> = ['EnProceso', 'EnInspeccion'];
+
+// MODIFICADO: antes ocultaba "Cancelar OT" solo en Finalizada/Cancelada, pero el dominio (WorkOrder.ValidTransitions)
+// tampoco permite cancelar desde EnInspeccion — con la lista anterior el boton quedaba visible ahi y la transicion fallaba en el backend.
+// Ahora se lista explicitamente desde que estados SI se puede cancelar (Pendiente y EnProceso), en vez de excluir los cerrados.
+const CANCELABLE_STATUSES: ReadonlyArray<WorkOrder['status']> = ['Pendiente', 'EnProceso'];
 
 const TASK_STATUS_LABELS: Record<WorkOrderTaskStatus, string> = {
   Pendiente: 'Pendiente',
@@ -39,8 +44,8 @@ const STATUS_OPTIONS: Array<{ value: WorkOrder['status']; label: string }> = [
   { value: 'Cancelada', label: 'Cancelada' },
 ];
 
-// MODIFICADO: agrega el botón "Programar Inspección" (visible en estados EnProceso/EnInspeccion) y el modal asociado para dar de alta la inspección desde la propia OT
-// ANTERIOR: solo mostraba el detalle de la OT y el cambio de estado, sin acción para programar inspecciones
+// MODIFICADO: agrega el botón "Cancelar OT" (visible salvo en estados Finalizada/Cancelada, con confirmación previa) y muestra la fecha de ingreso (intakeDate) junto a las demás fechas
+// ANTERIOR: agregaba el botón "Programar Inspección" (visible en estados EnProceso/EnInspeccion) y el modal asociado, sin botón de cancelación ni fecha de ingreso
 export function WorkOrderDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -66,6 +71,14 @@ export function WorkOrderDetailPage(): JSX.Element {
 
   const handleStatusChange = (newStatus: WorkOrder['status']): void => {
     updateStatus({ id: order.id, status: newStatus });
+  };
+
+  // Pide confirmación y dispara la transición de estado a Cancelada (misma mutación que usa el dropdown de cambio de estado, para no perder trazabilidad de auditoría)
+  const handleCancelOrder = (): void => {
+    if (!window.confirm(`¿Cancelar la OT ${order.number}? Esta acción quedará registrada en el historial de la orden.`)) {
+      return;
+    }
+    updateStatus({ id: order.id, status: 'Cancelada' });
   };
 
   return (
@@ -116,6 +129,17 @@ export function WorkOrderDetailPage(): JSX.Element {
               onClick={() => setIsScheduleModalOpen(true)}
             >
               Programar Inspección
+            </Button>
+          )}
+          {CANCELABLE_STATUSES.includes(order.status) && (
+            <Button
+              variant="destructive"
+              size="sm"
+              leftIcon={<Ban size={14} />}
+              isLoading={isUpdating}
+              onClick={handleCancelOrder}
+            >
+              Cancelar OT
             </Button>
           )}
           <div className="relative group">
@@ -314,6 +338,12 @@ export function WorkOrderDetailPage(): JSX.Element {
                   <dt className="text-surface-500">Creada</dt>
                   <dd className="text-surface-700">{formatDate(order.createdAt)}</dd>
                 </div>
+                {order.intakeDate && (
+                  <div className="flex justify-between">
+                    <dt className="text-surface-500">Ingreso</dt>
+                    <dd className="text-surface-700">{formatDate(order.intakeDate)}</dd>
+                  </div>
+                )}
                 {order.startDate && (
                   <div className="flex justify-between">
                     <dt className="text-surface-500">Inicio</dt>

@@ -125,9 +125,17 @@ export const workOrdersService = {
     return data.data;
   },
 
+  // MODIFICADO: el payload de edición ahora incluye intakeDate (fecha de ingreso), editable desde WorkOrderEditPage
+  // ANTERIOR: solo aceptaba description, estimatedHours, estimatedEndDate y priority
   async update(
     id: string,
-    payload: { description: string; estimatedHours: number; estimatedEndDate: string; priority: WorkOrderPriority }
+    payload: {
+      description: string;
+      estimatedHours: number;
+      intakeDate: string;
+      estimatedEndDate: string;
+      priority: WorkOrderPriority;
+    }
   ): Promise<WorkOrder> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 600));
