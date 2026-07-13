@@ -8,3 +8,4 @@ export * from './user.types';
 export * from './dashboard.types';
 export * from './report.types';
 export * from './common.types';
+export * from './notification.types';

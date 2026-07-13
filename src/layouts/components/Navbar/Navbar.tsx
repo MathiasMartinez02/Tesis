@@ -7,10 +7,16 @@ import { useUIStore } from '@/store/uiStore';
 import { useAuthStore, selectUser } from '@/store/authStore';
 import { ROLE_LABELS, ROUTES } from '@/constants';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
+import { useUnreadNotificationsCount } from '@/modules/notifications/hooks/useNotifications';
+import { NotificationsPanel } from '@/modules/notifications/components/NotificationsPanel';
 
+// MODIFICADO: agrega estado para el panel de notificaciones y el contador de no leidas
+// ANTERIOR: solo manejaba el estado del menu de usuario y de la busqueda
 export function Navbar(): JSX.Element {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { data: unreadCount } = useUnreadNotificationsCount();
   const navigate = useNavigate();
   const setMobileOpen = useUIStore((s) => s.setSidebarMobileOpen);
   const theme = useUIStore((s) => s.theme);
@@ -88,13 +94,27 @@ export function Navbar(): JSX.Element {
         </button>
 
         {/* Notificaciones */}
-        <button
-          aria-label="Notificaciones"
-          className="relative rounded-md p-2 text-surface-500 hover:bg-surface-100 hover:text-surface-900 dark:hover:bg-surface-700 dark:hover:text-white"
-        >
-          <Bell size={18} />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" aria-label="Tienes notificaciones" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            aria-label="Notificaciones"
+            aria-expanded={notificationsOpen}
+            aria-haspopup="true"
+            className="relative rounded-md p-2 text-surface-500 hover:bg-surface-100 hover:text-surface-900 dark:hover:bg-surface-700 dark:hover:text-white"
+          >
+            <Bell size={18} />
+            {!!unreadCount?.count && unreadCount.count > 0 && (
+              <span
+                className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
+                aria-label={`Tienes ${unreadCount.count} notificaciones sin leer`}
+              >
+                {unreadCount.count > 99 ? '99+' : unreadCount.count}
+              </span>
+            )}
+          </button>
+
+          <NotificationsPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+        </div>
 
         {/* Separador */}
         <div className="mx-1 h-6 w-px bg-surface-200 dark:bg-surface-700" />
