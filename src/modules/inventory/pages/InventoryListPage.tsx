@@ -8,11 +8,14 @@ import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { KPICard } from '@/shared/components/KPICard/KPICard';
+import { RoleGuard } from '@/routes/RoleGuard';
 import { useInventory } from '../hooks/useInventory';
 import { ROUTES, INVENTORY_CATEGORY_LABELS, buildRoute } from '@/constants';
 import { formatCurrency } from '@/lib/utils';
 import type { InventoryItem, TableColumn } from '@/types';
 
+// MODIFICADO: el boton "Editar" (incluye edicion de costo unitario) ahora exige canManageInventory, igual que en InventoryItemDetailPage
+// ANTERIOR: el boton era visible para cualquier usuario autenticado, sin chequeo de permiso
 // Recibe la función de navegación para poder ir a la edición sin propagar el click al row (que navega al detalle)
 function buildColumns(navigate: (path: string) => void): TableColumn<InventoryItem>[] {
   return [
@@ -22,17 +25,19 @@ function buildColumns(navigate: (path: string) => void): TableColumn<InventoryIt
     header: '',
     width: '90px',
     render: (_, row) => (
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={`Editar ${row.partNumber}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(buildRoute(ROUTES.INVENTORY_ITEM_EDIT, { id: row.id }));
-        }}
-      >
-        <Edit size={14} />
-      </Button>
+      <RoleGuard permission="canManageInventory">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Editar ${row.partNumber}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(buildRoute(ROUTES.INVENTORY_ITEM_EDIT, { id: row.id }));
+          }}
+        >
+          <Edit size={14} />
+        </Button>
+      </RoleGuard>
     ),
   },
   ];

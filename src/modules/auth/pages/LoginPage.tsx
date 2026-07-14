@@ -11,6 +11,7 @@ import { authService } from '@/services/api/auth.service';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { ROUTES } from '@/constants';
+import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').min(1, 'Requerido'),
@@ -30,6 +31,7 @@ export function LoginPage(): JSX.Element {
   const login = useAuthStore((s) => s.login);
   const addToast = useUIStore((s) => s.addToast);
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? ROUTES.DASHBOARD;
 
@@ -145,6 +147,16 @@ export function LoginPage(): JSX.Element {
           {...register('password')}
         />
 
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={() => setIsForgotPasswordOpen(true)}
+            className="text-xs font-medium text-aviation-600 hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
+
         {/* Error global */}
         {errors.root && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -161,6 +173,8 @@ export function LoginPage(): JSX.Element {
           Ingresar al sistema
         </Button>
       </form>
+
+      <ForgotPasswordModal isOpen={isForgotPasswordOpen} onClose={() => setIsForgotPasswordOpen(false)} />
     </motion.div>
   );
 }

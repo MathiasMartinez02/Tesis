@@ -11,3 +11,4 @@ export * from './common.types';
 export * from './notification.types';
 export * from './appointment.types';
 export * from './technicalDocument.types';
+export * from './budget.types';

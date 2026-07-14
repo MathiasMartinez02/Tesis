@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plane, User, Clock, Calendar, Edit, ChevronDown, CalendarCheck, Ban } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plane,
+  User,
+  Clock,
+  Calendar,
+  Edit,
+  ChevronDown,
+  CalendarCheck,
+  Ban,
+  ListPlus,
+  PackagePlus,
+  PackageCheck,
+  PackageX,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
@@ -8,11 +22,19 @@ import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { Timeline } from '@/shared/components/Timeline/Timeline';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
-import { useWorkOrder, useUpdateWorkOrderStatus } from '../hooks/useWorkOrders';
+import { RoleGuard } from '@/routes/RoleGuard';
+import {
+  useWorkOrder,
+  useUpdateWorkOrderStatus,
+  useUpdateTaskStatus,
+  useUpdateMaterialStatus,
+} from '../hooks/useWorkOrders';
 import { ScheduleInspectionModal } from '../components/ScheduleInspectionModal';
+import { AddTaskModal } from '../components/AddTaskModal';
+import { AddMaterialModal } from '../components/AddMaterialModal';
 import { WORK_ORDER_TYPE_LABELS, ROUTES, buildRoute } from '@/constants';
 import { formatDate, formatDateTime, formatFlightHours } from '@/lib/utils';
-import type { WorkOrder, WorkOrderTaskStatus } from '@/types';
+import type { WorkOrder, WorkOrderTaskStatus, WorkOrderMaterialStatus } from '@/types';
 
 // Estados de la OT en los que tiene sentido programar una inspección
 const INSPECTABLE_STATUSES: ReadonlyArray<WorkOrder['status']> = ['EnProceso', 'EnInspeccion'];
@@ -36,6 +58,27 @@ const TASK_STATUS_COLORS: Record<WorkOrderTaskStatus, string> = {
   Observada: 'bg-amber-100 text-amber-700',
 };
 
+// Labels/colores para el estado de un material de OT (Fase 8: seccion de Materiales nueva)
+const MATERIAL_STATUS_LABELS: Record<WorkOrderMaterialStatus, string> = {
+  Pendiente: 'Pendiente',
+  Entregado: 'Entregado',
+  NoDisponible: 'No Disponible',
+};
+
+const MATERIAL_STATUS_COLORS: Record<WorkOrderMaterialStatus, string> = {
+  Pendiente: 'bg-gray-100 text-gray-600',
+  Entregado: 'bg-emerald-100 text-emerald-700',
+  NoDisponible: 'bg-red-100 text-red-700',
+};
+
+// Próximo estado sugerido para el ciclo simple de una tarea al hacer click en su badge (Fase 8: antes solo lectura)
+const NEXT_TASK_STATUS: Record<WorkOrderTaskStatus, WorkOrderTaskStatus> = {
+  Pendiente: 'EnProceso',
+  EnProceso: 'Completada',
+  Completada: 'Pendiente',
+  Observada: 'EnProceso',
+};
+
 const STATUS_OPTIONS: Array<{ value: WorkOrder['status']; label: string }> = [
   { value: 'Pendiente', label: 'Pendiente' },
   { value: 'EnProceso', label: 'En Proceso' },
@@ -51,7 +94,11 @@ export function WorkOrderDetailPage(): JSX.Element {
   const navigate = useNavigate();
   const { data: order, isLoading, isError, refetch } = useWorkOrder(id ?? '');
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateWorkOrderStatus();
+  const { mutate: updateTaskStatus } = useUpdateTaskStatus();
+  const { mutate: updateMaterialStatus } = useUpdateMaterialStatus();
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
 
   if (isLoading) return <PageLoader />;
   if (isError || !order) {
@@ -79,6 +126,16 @@ export function WorkOrderDetailPage(): JSX.Element {
       return;
     }
     updateStatus({ id: order.id, status: 'Cancelada' });
+  };
+
+  // Avanza el estado de una tarea al siguiente del ciclo simple (Pendiente -> EnProceso -> Completada -> Pendiente)
+  const handleAdvanceTaskStatus = (taskId: string, currentStatus: WorkOrderTaskStatus): void => {
+    updateTaskStatus({ workOrderId: order.id, taskId, status: NEXT_TASK_STATUS[currentStatus] });
+  };
+
+  // Marca un material como Entregado o No Disponible
+  const handleUpdateMaterialStatus = (materialId: string, status: WorkOrderMaterialStatus): void => {
+    updateMaterialStatus({ workOrderId: order.id, materialId, status });
   };
 
   return (
@@ -131,38 +188,42 @@ export function WorkOrderDetailPage(): JSX.Element {
               Programar Inspección
             </Button>
           )}
-          {CANCELABLE_STATUSES.includes(order.status) && (
-            <Button
-              variant="destructive"
-              size="sm"
-              leftIcon={<Ban size={14} />}
-              isLoading={isUpdating}
-              onClick={handleCancelOrder}
-            >
-              Cancelar OT
-            </Button>
-          )}
-          <div className="relative group">
-            <Button
-              size="sm"
-              rightIcon={<ChevronDown size={14} />}
-              isLoading={isUpdating}
-            >
-              Cambiar estado
-            </Button>
-            <div className="absolute right-0 top-full z-10 mt-1 hidden w-44 rounded-lg border border-surface-200 bg-white py-1 shadow-dropdown group-focus-within:block group-hover:block dark:border-surface-700 dark:bg-surface-800">
-              {STATUS_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleStatusChange(opt.value)}
-                  disabled={opt.value === order.status}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-surface-50 disabled:opacity-40 dark:hover:bg-surface-700"
-                >
-                  {opt.label}
-                </button>
-              ))}
+          {/* MODIFICADO: "Cancelar OT" y "Cambiar estado" ahora exigen canManageWorkOrders (mismo permiso que el backend valida en PATCH /work-orders/{id}/status), no solo estar autenticado */}
+          {/* ANTERIOR: ambos controles eran visibles para cualquier usuario logueado, sin chequeo de permiso en el frontend */}
+          <RoleGuard permission="canManageWorkOrders">
+            {CANCELABLE_STATUSES.includes(order.status) && (
+              <Button
+                variant="destructive"
+                size="sm"
+                leftIcon={<Ban size={14} />}
+                isLoading={isUpdating}
+                onClick={handleCancelOrder}
+              >
+                Cancelar OT
+              </Button>
+            )}
+            <div className="relative group">
+              <Button
+                size="sm"
+                rightIcon={<ChevronDown size={14} />}
+                isLoading={isUpdating}
+              >
+                Cambiar estado
+              </Button>
+              <div className="absolute right-0 top-full z-10 mt-1 hidden w-44 rounded-lg border border-surface-200 bg-white py-1 shadow-dropdown group-focus-within:block group-hover:block dark:border-surface-700 dark:bg-surface-800">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleStatusChange(opt.value)}
+                    disabled={opt.value === order.status}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-surface-50 disabled:opacity-40 dark:hover:bg-surface-700"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          </RoleGuard>
         </div>
       </div>
 
@@ -185,9 +246,22 @@ export function WorkOrderDetailPage(): JSX.Element {
           <Card>
             <CardHeader>
               <CardTitle>Tareas ({completedTasks}/{order.tasks.length})</CardTitle>
-              <span className="text-sm font-semibold text-surface-700 dark:text-white">
-                {progress}%
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-surface-700 dark:text-white">
+                  {progress}%
+                </span>
+                {/* MODIFICADO (Fase 8): boton "Agregar Tarea" nuevo, protegido con canManageWorkOrders (mismo permiso que exige el backend en POST /work-orders/{id}/tasks) */}
+                <RoleGuard permission="canManageWorkOrders">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<ListPlus size={14} />}
+                    onClick={() => setIsAddTaskModalOpen(true)}
+                  >
+                    Agregar Tarea
+                  </Button>
+                </RoleGuard>
+              </div>
             </CardHeader>
             <CardBody>
               <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface-100 dark:bg-surface-700">
@@ -218,11 +292,27 @@ export function WorkOrderDetailPage(): JSX.Element {
                           <span className="text-sm font-medium text-surface-900 dark:text-white">
                             {task.title}
                           </span>
-                          <span
-                            className={`rounded px-1.5 py-0.5 text-2xs font-medium ${TASK_STATUS_COLORS[task.status]}`}
+                          {/* MODIFICADO (Fase 8): el badge de estado ahora es un boton que avanza la tarea al siguiente estado del ciclo (usa useUpdateTaskStatus), protegido con canManageWorkOrders */}
+                          {/* ANTERIOR: <span> de solo lectura con el mismo estilo, sin ninguna accion */}
+                          <RoleGuard
+                            permission="canManageWorkOrders"
+                            fallback={
+                              <span
+                                className={`rounded px-1.5 py-0.5 text-2xs font-medium ${TASK_STATUS_COLORS[task.status]}`}
+                              >
+                                {TASK_STATUS_LABELS[task.status]}
+                              </span>
+                            }
                           >
-                            {TASK_STATUS_LABELS[task.status]}
-                          </span>
+                            <button
+                              type="button"
+                              onClick={() => handleAdvanceTaskStatus(task.id, task.status)}
+                              title="Avanzar estado de la tarea"
+                              className={`rounded px-1.5 py-0.5 text-2xs font-medium transition-opacity hover:opacity-75 ${TASK_STATUS_COLORS[task.status]}`}
+                            >
+                              {TASK_STATUS_LABELS[task.status]}
+                            </button>
+                          </RoleGuard>
                           {task.requiresInspection && (
                             <span className="rounded bg-purple-100 px-1.5 py-0.5 text-2xs font-medium text-purple-700">
                               Req. Inspección
@@ -241,6 +331,79 @@ export function WorkOrderDetailPage(): JSX.Element {
                           {task.actualHours}h / {task.estimatedHours}h
                         </p>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          {/* Materiales (Fase 8: seccion nueva, WorkOrderMaterial existia en el Domain pero no tenia UI ni endpoint) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Materiales ({order.materials.length})</CardTitle>
+              <RoleGuard permission="canManageWorkOrders">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<PackagePlus size={14} />}
+                  onClick={() => setIsAddMaterialModalOpen(true)}
+                >
+                  Pedir Material
+                </Button>
+              </RoleGuard>
+            </CardHeader>
+            <CardBody>
+              {order.materials.length === 0 ? (
+                <p className="text-sm text-surface-400 text-center py-4">No hay materiales pedidos</p>
+              ) : (
+                <div className="space-y-2">
+                  {order.materials.map((material) => (
+                    <div
+                      key={material.id}
+                      className="flex items-start gap-3 rounded-lg border border-surface-100 p-3 dark:border-surface-700"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-surface-900 dark:text-white">
+                            {material.partNumber}
+                          </span>
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-2xs font-medium ${MATERIAL_STATUS_COLORS[material.status]}`}
+                          >
+                            {MATERIAL_STATUS_LABELS[material.status]}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-surface-500">{material.description}</p>
+                        <p className="mt-0.5 text-xs text-surface-400">
+                          {material.quantity} {material.unit} · Pedido el {formatDate(material.requestedAt)}
+                          {material.deliveredAt && ` · Entregado el ${formatDate(material.deliveredAt)}`}
+                        </p>
+                      </div>
+                      {material.status === 'Pendiente' && (
+                        <RoleGuard permission="canManageWorkOrders">
+                          <div className="flex shrink-0 gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Marcar entregado"
+                              title="Marcar entregado"
+                              onClick={() => handleUpdateMaterialStatus(material.id, 'Entregado')}
+                            >
+                              <PackageCheck size={16} className="text-emerald-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Marcar no disponible"
+                              title="Marcar no disponible"
+                              onClick={() => handleUpdateMaterialStatus(material.id, 'NoDisponible')}
+                            >
+                              <PackageX size={16} className="text-red-600" />
+                            </Button>
+                          </div>
+                        </RoleGuard>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -404,6 +567,16 @@ export function WorkOrderDetailPage(): JSX.Element {
       <ScheduleInspectionModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
+        workOrderId={order.id}
+      />
+      <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        workOrderId={order.id}
+      />
+      <AddMaterialModal
+        isOpen={isAddMaterialModalOpen}
+        onClose={() => setIsAddMaterialModalOpen(false)}
         workOrderId={order.id}
       />
     </motion.div>

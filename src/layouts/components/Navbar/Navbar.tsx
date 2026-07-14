@@ -9,9 +9,11 @@ import { ROLE_LABELS, ROUTES } from '@/constants';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { useUnreadNotificationsCount } from '@/modules/notifications/hooks/useNotifications';
 import { NotificationsPanel } from '@/modules/notifications/components/NotificationsPanel';
+import { GlobalSearchPanel } from './GlobalSearchPanel';
 
-// MODIFICADO: agrega estado para el panel de notificaciones y el contador de no leidas
-// ANTERIOR: solo manejaba el estado del menu de usuario y de la busqueda
+// MODIFICADO (Fase 8): el boton de busqueda ahora abre GlobalSearchPanel (antes solo togleaba un estado sin
+// ningun efecto visible) y "Mi Perfil" navega a ROUTES.PROFILE (antes era un boton sin onClick).
+// ANTERIOR: agrega estado para el panel de notificaciones y el contador de no leidas
 export function Navbar(): JSX.Element {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -76,13 +78,19 @@ export function Navbar(): JSX.Element {
       {/* ── Derecha: Acciones ────────────────────────────────────────── */}
       <div className="flex items-center gap-1">
         {/* Búsqueda global */}
-        <button
-          onClick={() => setSearchOpen(!searchOpen)}
-          aria-label="Búsqueda global"
-          className="rounded-md p-2 text-surface-500 hover:bg-surface-100 hover:text-surface-900 dark:hover:bg-surface-700 dark:hover:text-white"
-        >
-          <Search size={18} />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setSearchOpen(!searchOpen)}
+            aria-label="Búsqueda global"
+            aria-expanded={searchOpen}
+            aria-haspopup="true"
+            className="rounded-md p-2 text-surface-500 hover:bg-surface-100 hover:text-surface-900 dark:hover:bg-surface-700 dark:hover:text-white"
+          >
+            <Search size={18} />
+          </button>
+
+          <GlobalSearchPanel isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+        </div>
 
         {/* Toggle theme */}
         <button
@@ -172,7 +180,13 @@ export function Navbar(): JSX.Element {
 
                   {/* Acciones */}
                   <div className="py-1">
-                    <button className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-surface-700 hover:bg-surface-50 dark:text-surface-300 dark:hover:bg-surface-700">
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate(ROUTES.PROFILE);
+                      }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-surface-700 hover:bg-surface-50 dark:text-surface-300 dark:hover:bg-surface-700"
+                    >
                       <User size={14} />
                       Mi Perfil
                     </button>

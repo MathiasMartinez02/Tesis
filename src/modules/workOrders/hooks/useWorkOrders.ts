@@ -5,8 +5,10 @@ import type {
   WorkOrder,
   WorkOrderPriority,
   WorkOrderTaskStatus,
+  WorkOrderMaterialStatus,
   AssignedMechanic,
   CreateWorkOrderPayload,
+  CreateWorkOrderMaterialPayload,
 } from '@/types';
 import { useUIStore } from '@/store/uiStore';
 
@@ -187,6 +189,49 @@ export function useUpdateTaskStatus() {
     },
     onError: (err: Error) => {
       addToast({ type: 'error', title: 'Error al actualizar tarea', description: err.message });
+    },
+  });
+}
+
+// Agrega un material/repuesto pedido a una OT (Fase 8: WorkOrderMaterial no tenia UI ni endpoint)
+export function useAddWorkOrderMaterial() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: CreateWorkOrderMaterialPayload }) =>
+      workOrdersService.addMaterial(id, payload),
+    onSuccess: (_, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, id] });
+      addToast({ type: 'success', title: 'Material agregado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al agregar material', description: err.message });
+    },
+  });
+}
+
+// Marca un material de OT como Entregado o No Disponible (Fase 8)
+export function useUpdateMaterialStatus() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({
+      workOrderId,
+      materialId,
+      status,
+    }: {
+      workOrderId: string;
+      materialId: string;
+      status: WorkOrderMaterialStatus;
+    }) => workOrdersService.updateMaterialStatus(workOrderId, materialId, status),
+    onSuccess: (_, { workOrderId }) => {
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, workOrderId] });
+      addToast({ type: 'success', title: 'Material actualizado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar material', description: err.message });
     },
   });
 }

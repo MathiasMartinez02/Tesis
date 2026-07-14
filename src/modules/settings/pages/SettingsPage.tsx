@@ -1,12 +1,17 @@
-import { Users, ShieldCheck, Sliders, ChevronRight } from 'lucide-react';
+import { Users, ShieldCheck, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Card } from '@/shared/components/ui/Card';
-import { Spinner } from '@/shared/components/ui/Spinner';
-import { ROLE_LABELS, ROLE_COLORS } from '@/constants';
-import { useUsers } from '../hooks/useUsers';
-import type { UserRole } from '@/types';
+import { ROUTES } from '@/constants';
+import { ChangePasswordCard } from '../components/ChangePasswordCard';
 
+// MODIFICADO: se quita la tarjeta "Parámetros del Sistema" (antes tercera tarjeta, con id 'system') y se agrega navegación real a las otras dos.
+// ANTERIOR: las 3 tarjetas eran botones decorativos sin onClick, ninguna navegaba a ningún lado (las rutas SETTINGS_USERS/SETTINGS_ROLES/SETTINGS_SYSTEM
+// estaban definidas en constants/routes.ts pero no montadas en AppRouter.tsx).
+// Decision de diseño (Fase 7): no se crea SettingsSystemPage porque hoy no existe ninguna entidad ni endpoint de "parametros del sistema" en el backend
+// (no hay casos de uso reales que mostrar) — armar una pantalla ahora seria UI decorativa sin datos, lo que el criterio de salida de esta fase pide evitar.
+// Se documenta esta decision en PLAN_ANALISIS_FUNCIONAL.md, seccion Fase 7.
 const CONFIG_SECTIONS = [
   {
     id: 'users',
@@ -15,6 +20,7 @@ const CONFIG_SECTIONS = [
     description: 'Gestión de cuentas de usuario del sistema',
     iconBg: 'bg-aviation-50',
     iconColor: 'text-aviation-600',
+    route: ROUTES.SETTINGS_USERS,
   },
   {
     id: 'roles',
@@ -23,20 +29,15 @@ const CONFIG_SECTIONS = [
     description: 'Configuración de roles y niveles de acceso',
     iconBg: 'bg-purple-50',
     iconColor: 'text-purple-600',
-  },
-  {
-    id: 'system',
-    icon: Sliders,
-    title: 'Parámetros del Sistema',
-    description: 'Configuración general de SIGMA',
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
+    route: ROUTES.SETTINGS_ROLES,
   },
 ];
 
+// MODIFICADO: la lista cruda de usuarios se movio a SettingsUsersPage (pagina dedicada, con alta/edicion/activacion real);
+// aca queda solo el hub de navegacion (tarjetas) mas la tarjeta de cambio de contraseña propia.
+// ANTERIOR: esta pagina renderizaba directamente el listado de usuarios de solo lectura via useUsers()
 export function SettingsPage(): JSX.Element {
-  const { data: result, isLoading } = useUsers({}, 1, 50);
-  const users = result?.data ?? [];
+  const navigate = useNavigate();
 
   return (
     <motion.div
@@ -51,7 +52,7 @@ export function SettingsPage(): JSX.Element {
       />
 
       {/* Secciones de configuración */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {CONFIG_SECTIONS.map((section) => {
           const Icon = section.icon;
           return (
@@ -60,6 +61,7 @@ export function SettingsPage(): JSX.Element {
               whileHover={{ y: -2 }}
               transition={{ duration: 0.15 }}
               className="text-left"
+              onClick={() => navigate(section.route)}
             >
               <Card hover className="h-full">
                 <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${section.iconBg}`}>
@@ -78,45 +80,12 @@ export function SettingsPage(): JSX.Element {
         })}
       </div>
 
-      {/* Lista de usuarios */}
+      {/* Mi cuenta */}
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-surface-400">
-          Usuarios del sistema
+          Mi cuenta
         </h2>
-        <Card padding="none">
-          {isLoading ? (
-            <div className="flex h-32 items-center justify-center">
-              <Spinner size="md" />
-            </div>
-          ) : (
-            <div className="divide-y divide-surface-100 dark:divide-surface-700">
-              {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between gap-4 px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-aviation-600 text-xs font-bold text-white">
-                      {user.firstName[0]}{user.lastName[0]}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-surface-900 dark:text-white">
-                        {user.firstName} {user.lastName}
-                      </p>
-                      <p className="text-xs text-surface-500">{user.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {user.licenseNumber && (
-                      <span className="font-mono text-xs text-surface-400">{user.licenseNumber}</span>
-                    )}
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role as UserRole] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {ROLE_LABELS[user.role as UserRole] ?? user.role}
-                    </span>
-                    <span className={`h-2 w-2 rounded-full ${user.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} aria-label={user.isActive ? 'Activo' : 'Inactivo'} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        <ChangePasswordCard />
       </section>
     </motion.div>
   );

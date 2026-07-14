@@ -148,3 +148,11 @@ export interface CreateWorkOrderTaskPayload {
   estimatedHours: number;
   requiresInspection: boolean;
 }
+
+// Payload para dar de alta un material/repuesto pedido por una OT (Fase 8)
+export interface CreateWorkOrderMaterialPayload {
+  partNumber: string;
+  description: string;
+  quantity: number;
+  unit: string;
+}

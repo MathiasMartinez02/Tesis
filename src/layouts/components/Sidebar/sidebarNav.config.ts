@@ -10,6 +10,7 @@ import {
   Settings,
   CalendarClock,
   FileText,
+  Receipt,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/constants';
@@ -101,6 +102,20 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Package,
         path: ROUTES.INVENTORY,
         requiredPermission: 'canManageInventory',
+      },
+    ],
+  },
+  {
+    id: 'administrative',
+    label: 'Administrativo',
+    items: [
+      {
+        // Fase 6 (MVP): presupuestos por cliente, reusa el mismo permiso que ya gestiona Clientes
+        id: 'budgets',
+        label: 'Presupuestos',
+        icon: Receipt,
+        path: ROUTES.BUDGETS,
+        requiredPermission: 'canManageClients',
       },
     ],
   },

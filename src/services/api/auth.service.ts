@@ -94,4 +94,45 @@ export const authService = {
     if (!data.success || !data.data) throw new Error('Refresh token inválido');
     return data.data;
   },
+
+  // Cambio de contraseña del propio usuario autenticado (PATCH /auth/me/password)
+  async changeOwnPassword(currentPassword: string, newPassword: string): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 400));
+      return;
+    }
+    const { data } = await apiClient.patch<ApiResponse<null>>('/auth/me/password', {
+      currentPassword,
+      newPassword,
+    });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al cambiar la contraseña');
+  },
+
+  // Paso 1 de "olvidé mi contraseña": genera un token de un solo uso. MVP sin envio de email real
+  // (no hay infraestructura de correo en el proyecto): el token se devuelve en la respuesta.
+  async forgotPassword(email: string): Promise<{ resetToken: string; expiresAt: string }> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 400));
+      return { resetToken: `mock-reset-${Date.now()}`, expiresAt: new Date(Date.now() + 3600_000).toISOString() };
+    }
+    const { data } = await apiClient.post<ApiResponse<{ resetToken: string; expiresAt: string }>>(
+      '/auth/forgot-password',
+      { email }
+    );
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'No se pudo generar el token de reseteo');
+    return data.data;
+  },
+
+  // Paso 2: aplica la nueva contraseña usando el token generado en el paso 1
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 400));
+      return;
+    }
+    const { data } = await apiClient.post<ApiResponse<null>>('/auth/reset-password', {
+      token,
+      newPassword,
+    });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Token inválido o expirado');
+  },
 };

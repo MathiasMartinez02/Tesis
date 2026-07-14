@@ -11,6 +11,7 @@ import type {
   MovementType,
   AppointmentStatus,
   TechnicalDocumentType,
+  BudgetStatus,
 } from '@/types';
 
 // ─── Work Orders ──────────────────────────────────────────────────────────────
@@ -180,6 +181,22 @@ export const TECHNICAL_DOCUMENT_TYPE_COLORS: Record<TechnicalDocumentType, strin
   DirectivaAD: 'bg-red-50 text-red-700 border-red-200',
   Certificado: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   Otro: 'bg-gray-100 text-gray-600 border-gray-200',
+};
+
+// ─── Presupuestos (Fase 6, MVP Administrativo) ─────────────────────────────────
+
+export const BUDGET_STATUS_LABELS: Record<BudgetStatus, string> = {
+  Pendiente: 'Pendiente',
+  Aceptado: 'Aceptado',
+  Rechazado: 'Rechazado',
+  Vencido: 'Vencido',
+};
+
+export const BUDGET_STATUS_COLORS: Record<BudgetStatus, string> = {
+  Pendiente: 'bg-amber-50 text-amber-700 border-amber-200',
+  Aceptado: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  Rechazado: 'bg-red-50 text-red-700 border-red-200',
+  Vencido: 'bg-gray-50 text-gray-600 border-gray-200',
 };
 
 // ─── Checklist ────────────────────────────────────────────────────────────────

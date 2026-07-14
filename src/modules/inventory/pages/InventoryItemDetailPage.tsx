@@ -8,6 +8,7 @@ import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
+import { RoleGuard } from '@/routes/RoleGuard';
 import { AddInventoryMovementModal } from '../components/AddInventoryMovementModal';
 import {
   useInventoryItem,
@@ -79,16 +80,20 @@ function buildMovementColumns(
             </span>
           );
         }
+        // MODIFICADO: el boton "Aprobar" ahora exige canManageInventory (mismo permiso que el backend valida en PATCH .../movements/{id}/approve)
+        // ANTERIOR: el boton era visible para cualquier usuario autenticado que abriera el detalle del item
         return (
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Check size={13} />}
-            isLoading={approvingId === row.id}
-            onClick={() => onApprove(row.id)}
-          >
-            Aprobar
-          </Button>
+          <RoleGuard permission="canManageInventory">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Check size={13} />}
+              isLoading={approvingId === row.id}
+              onClick={() => onApprove(row.id)}
+            >
+              Aprobar
+            </Button>
+          </RoleGuard>
         );
       },
     },
@@ -176,23 +181,27 @@ export function InventoryItemDetailPage(): JSX.Element {
           >
             Registrar Movimiento
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Edit size={14} />}
-            onClick={() => navigate(buildRoute(ROUTES.INVENTORY_ITEM_EDIT, { id: item.id }))}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            leftIcon={<Trash2 size={14} />}
-            isLoading={isDeleting}
-            onClick={handleDelete}
-          >
-            Eliminar
-          </Button>
+          {/* MODIFICADO: "Editar" (incluye edicion de costo unitario) y "Eliminar" ahora exigen canManageInventory, mismo permiso que el backend valida en PUT/DELETE /inventory/{id} */}
+          {/* ANTERIOR: ambos botones eran visibles para cualquier usuario autenticado */}
+          <RoleGuard permission="canManageInventory">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Edit size={14} />}
+              onClick={() => navigate(buildRoute(ROUTES.INVENTORY_ITEM_EDIT, { id: item.id }))}
+            >
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              leftIcon={<Trash2 size={14} />}
+              isLoading={isDeleting}
+              onClick={handleDelete}
+            >
+              Eliminar
+            </Button>
+          </RoleGuard>
         </div>
       </div>
 

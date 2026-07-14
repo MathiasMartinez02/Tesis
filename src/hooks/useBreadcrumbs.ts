@@ -20,6 +20,7 @@ const ROUTE_LABELS: Record<string, string> = {
   'usuarios': 'Usuarios',
   'roles': 'Roles',
   'sistema': 'Sistema',
+  'mi-perfil': 'Mi Perfil',
 };
 
 /**

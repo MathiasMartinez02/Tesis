@@ -146,12 +146,34 @@ const TechnicalDocumentsListPage = lazy(() =>
   }))
 );
 
+const BudgetsListPage = lazy(() =>
+  import('@/modules/budgets/pages/BudgetsListPage').then((m) => ({
+    default: m.BudgetsListPage,
+  }))
+);
+
 const ReportsPage = lazy(() =>
   import('@/modules/reports/pages/ReportsPage').then((m) => ({ default: m.ReportsPage }))
 );
 
 const SettingsPage = lazy(() =>
   import('@/modules/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+);
+
+const SettingsUsersPage = lazy(() =>
+  import('@/modules/settings/pages/SettingsUsersPage').then((m) => ({
+    default: m.SettingsUsersPage,
+  }))
+);
+
+const SettingsRolesPage = lazy(() =>
+  import('@/modules/settings/pages/SettingsRolesPage').then((m) => ({
+    default: m.SettingsRolesPage,
+  }))
+);
+
+const ProfilePage = lazy(() =>
+  import('@/modules/settings/pages/ProfilePage').then((m) => ({ default: m.ProfilePage }))
 );
 
 // ─── Router config ────────────────────────────────────────────────────────────
@@ -364,6 +386,14 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTES.BUDGETS,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <BudgetsListPage />
+              </Suspense>
+            ),
+          },
+          {
             path: ROUTES.REPORTS,
             element: (
               <Suspense fallback={<PageLoader />}>
@@ -376,6 +406,30 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <SettingsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.SETTINGS_USERS,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SettingsUsersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.SETTINGS_ROLES,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SettingsRolesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.PROFILE,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
               </Suspense>
             ),
           },

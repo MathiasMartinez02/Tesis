@@ -45,14 +45,22 @@ export const ROUTES = {
   // Documentación técnica
   TECHNICAL_DOCUMENTS: '/documentacion-tecnica',
 
+  // Presupuestos (Fase 6, MVP Administrativo)
+  BUDGETS: '/presupuestos',
+
   // Reportes
   REPORTS: '/reportes',
 
   // Configuración
+  // MODIFICADO: se quita SETTINGS_SYSTEM (Fase 7): no existe ningun caso de uso real de "parametros del sistema" en el backend hoy,
+  // se documenta como decision de alcance en PLAN_ANALISIS_FUNCIONAL.md en vez de dejar una ruta/tarjeta apuntando a una pantalla vacia.
+  // ANTERIOR: incluia tambien SETTINGS_SYSTEM: '/configuracion/sistema'
   SETTINGS: '/configuracion',
   SETTINGS_USERS: '/configuracion/usuarios',
   SETTINGS_ROLES: '/configuracion/roles',
-  SETTINGS_SYSTEM: '/configuracion/sistema',
+
+  // Perfil propio (Fase 8): antes el boton "Mi Perfil" del Navbar no navegaba a ningun lado
+  PROFILE: '/mi-perfil',
 
   // 404
   NOT_FOUND: '/404',

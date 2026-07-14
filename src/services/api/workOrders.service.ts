@@ -5,7 +5,10 @@ import type {
   WorkOrderPriority,
   WorkOrderTask,
   WorkOrderTaskStatus,
+  WorkOrderMaterial,
+  WorkOrderMaterialStatus,
   CreateWorkOrderPayload,
+  CreateWorkOrderMaterialPayload,
   ApiResponse,
   PaginatedResult,
 } from '@/types';
@@ -14,6 +17,11 @@ import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
 
 // ─── Helpers mock ─────────────────────────────────────────────────────────────
+
+// Almacen mock de tareas y materiales por OT (Fase 8): antes no existia ningun
+// almacen, getById devolvia siempre tasks/materials vacios y addTask tiraba error en mock.
+const MOCK_TASKS_BY_ORDER: Record<string, WorkOrderTask[]> = {};
+const MOCK_MATERIALS_BY_ORDER: Record<string, WorkOrderMaterial[]> = {};
 
 function applyFilters(orders: WorkOrder[], filters: WorkOrderFilters): WorkOrder[] {
   return orders.filter((order) => {
@@ -63,6 +71,8 @@ export const workOrdersService = {
     return data.data;
   },
 
+  // MODIFICADO: tasks/materials ahora se leen del almacen mock en memoria (MOCK_TASKS_BY_ORDER/MOCK_MATERIALS_BY_ORDER)
+  // en vez de devolver siempre arreglos vacios, para que addTask/addMaterial sean visibles en modo mock.
   async getById(id: string): Promise<WorkOrderDetail> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 300));
@@ -70,7 +80,7 @@ export const workOrdersService = {
       if (!order) throw new Error(`OT ${id} no encontrada`);
       return {
         ...order,
-        tasks: [],
+        tasks: MOCK_TASKS_BY_ORDER[id] ?? [],
         timeline: [
           {
             id: 'tl-001',
@@ -82,7 +92,7 @@ export const workOrdersService = {
             createdAt: order.createdAt,
           },
         ],
-        materials: [],
+        materials: MOCK_MATERIALS_BY_ORDER[id] ?? [],
         documents: [],
         assignedMechanics: [],
       };
@@ -179,19 +189,35 @@ export const workOrdersService = {
     await apiClient.delete(`/work-orders/${workOrderId}/mechanics/${userId}`);
   },
 
+  // MODIFICADO (Fase 8): ahora crea la tarea en el almacen mock en memoria en vez de tirar
+  // Error('addTask no disponible en modo mock'), asi la UI de tareas funciona tambien con VITE_ENABLE_MOCK_API=true.
   async addTask(
     id: string,
     payload: { title: string; description: string; estimatedHours: number; requiresInspection: boolean }
   ): Promise<WorkOrderTask> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));
-      throw new Error('addTask no disponible en modo mock');
+      const tasks = MOCK_TASKS_BY_ORDER[id] ?? (MOCK_TASKS_BY_ORDER[id] = []);
+      const newTask: WorkOrderTask = {
+        id: `task-${Date.now()}`,
+        orderIndex: tasks.length + 1,
+        title: payload.title,
+        description: payload.description,
+        status: 'Pendiente',
+        estimatedHours: payload.estimatedHours,
+        actualHours: 0,
+        requiresInspection: payload.requiresInspection,
+      };
+      tasks.push(newTask);
+      return newTask;
     }
     const { data } = await apiClient.post<ApiResponse<WorkOrderTask>>(`/work-orders/${id}/tasks`, payload);
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al agregar tarea');
     return data.data;
   },
 
+  // MODIFICADO (Fase 8): ahora actualiza de verdad la tarea en el almacen mock (antes era un no-op que
+  // esperaba y retornaba sin persistir ningun cambio, dejando la UI desincronizada tras refrescar).
   async updateTaskStatus(
     id: string,
     taskId: string,
@@ -200,8 +226,50 @@ export const workOrdersService = {
   ): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 300));
+      const task = (MOCK_TASKS_BY_ORDER[id] ?? []).find((t) => t.id === taskId);
+      if (task) {
+        task.status = status;
+        task.observations = observations;
+        if (status === 'Completada') task.completedAt = new Date().toISOString();
+      }
       return;
     }
     await apiClient.patch(`/work-orders/${id}/tasks/${taskId}/status`, { status, observations });
+  },
+
+  // Agrega un material/repuesto pedido a una OT (Fase 8: WorkOrderMaterial no tenia service ni endpoint)
+  async addMaterial(id: string, payload: CreateWorkOrderMaterialPayload): Promise<WorkOrderMaterial> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 400));
+      const materials = MOCK_MATERIALS_BY_ORDER[id] ?? (MOCK_MATERIALS_BY_ORDER[id] = []);
+      const newMaterial: WorkOrderMaterial = {
+        id: `mat-${Date.now()}`,
+        partNumber: payload.partNumber,
+        description: payload.description,
+        quantity: payload.quantity,
+        unit: payload.unit,
+        requestedAt: new Date().toISOString(),
+        status: 'Pendiente',
+      };
+      materials.push(newMaterial);
+      return newMaterial;
+    }
+    const { data } = await apiClient.post<ApiResponse<WorkOrderMaterial>>(`/work-orders/${id}/materials`, payload);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al agregar material');
+    return data.data;
+  },
+
+  // Marca un material de OT como Entregado o No Disponible (Fase 8)
+  async updateMaterialStatus(id: string, materialId: string, status: WorkOrderMaterialStatus): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 300));
+      const material = (MOCK_MATERIALS_BY_ORDER[id] ?? []).find((m) => m.id === materialId);
+      if (material) {
+        material.status = status;
+        if (status === 'Entregado') material.deliveredAt = new Date().toISOString();
+      }
+      return;
+    }
+    await apiClient.patch(`/work-orders/${id}/materials/${materialId}/status`, { status });
   },
 };
