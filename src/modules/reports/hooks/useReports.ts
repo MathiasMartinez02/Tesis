@@ -31,3 +31,11 @@ export function useInventoryReport() {
     queryFn: () => reportsService.getInventoryReport(),
   });
 }
+
+// Trae las horas de taller (ActualHours de OT) agrupadas por mes, usadas en el gráfico "Horas de Taller por Mes" de ReportsPage
+export function useMonthlyWorkshopHours(months = 7) {
+  return useQuery({
+    queryKey: [...REPORTS_QUERY_KEY, 'monthly-hours', months],
+    queryFn: () => reportsService.getMonthlyWorkshopHours(months),
+  });
+}

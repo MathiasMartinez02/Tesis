@@ -98,6 +98,23 @@ export function downloadBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
+/** Escapa un valor para insertarlo como celda CSV (envuelve en comillas si contiene comas, comillas o saltos de línea) */
+export function csvEscape(value: string): string {
+  if (/[",\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+// Arma un CSV a partir de encabezados y filas y lo descarga en el navegador. Centraliza la lógica de exportación
+// CSV usada en varias páginas (OT, Reportes) para no duplicar el escapado/armado de filas en cada una.
+export function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]): void {
+  const csvRows = rows.map((row) => row.map((cell) => csvEscape(String(cell))).join(','));
+  const csvContent = [headers.join(','), ...csvRows].join('\n');
+  const blob = new Blob([`﻿${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, filename);
+}
+
 /** Filtra objeto removiendo valores undefined/null */
 export function cleanObject<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return Object.fromEntries(

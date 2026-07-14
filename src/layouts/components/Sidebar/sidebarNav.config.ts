@@ -9,6 +9,7 @@ import {
   BarChart3,
   Settings,
   CalendarClock,
+  FileText,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/constants';
@@ -113,6 +114,20 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: BarChart3,
         path: ROUTES.REPORTS,
         requiredPermission: 'canViewReports',
+      },
+    ],
+  },
+  {
+    id: 'documentation',
+    label: 'Documentación',
+    items: [
+      {
+        // Fase 4: repositorio general de manuales/boletines/directivas AD, protegido con el mismo permiso que ya usa "Subir documento" en Aeronaves
+        id: 'technical-documents',
+        label: 'Documentación Técnica',
+        icon: FileText,
+        path: ROUTES.TECHNICAL_DOCUMENTS,
+        requiredPermission: 'canSignDocuments',
       },
     ],
   },

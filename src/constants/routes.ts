@@ -42,6 +42,9 @@ export const ROUTES = {
   INVENTORY_ITEM_DETAIL: '/panol/:id',
   INVENTORY_ITEM_EDIT: '/panol/:id/editar',
 
+  // Documentación técnica
+  TECHNICAL_DOCUMENTS: '/documentacion-tecnica',
+
   // Reportes
   REPORTS: '/reportes',
 

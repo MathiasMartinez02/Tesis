@@ -10,6 +10,7 @@ import type {
   ChecklistItemStatus,
   MovementType,
   AppointmentStatus,
+  TechnicalDocumentType,
 } from '@/types';
 
 // ─── Work Orders ──────────────────────────────────────────────────────────────
@@ -161,6 +162,24 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
   Confirmado: 'bg-blue-50 text-blue-700 border-blue-200',
   Cancelado: 'bg-red-50 text-red-700 border-red-200',
   ConvertidoOT: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+};
+
+// ─── Documentación técnica ──────────────────────────────────────────────────────
+
+export const TECHNICAL_DOCUMENT_TYPE_LABELS: Record<TechnicalDocumentType, string> = {
+  Manual: 'Manual',
+  BoletinServicio: 'Boletín de Servicio',
+  DirectivaAD: 'Directiva AD',
+  Certificado: 'Certificado',
+  Otro: 'Otro',
+};
+
+export const TECHNICAL_DOCUMENT_TYPE_COLORS: Record<TechnicalDocumentType, string> = {
+  Manual: 'bg-blue-50 text-blue-700 border-blue-200',
+  BoletinServicio: 'bg-purple-50 text-purple-700 border-purple-200',
+  DirectivaAD: 'bg-red-50 text-red-700 border-red-200',
+  Certificado: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  Otro: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 
 // ─── Checklist ────────────────────────────────────────────────────────────────

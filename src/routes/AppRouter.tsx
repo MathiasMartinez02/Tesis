@@ -140,6 +140,12 @@ const InventoryItemEditPage = lazy(() =>
   }))
 );
 
+const TechnicalDocumentsListPage = lazy(() =>
+  import('@/modules/technicalDocuments/pages/TechnicalDocumentsListPage').then((m) => ({
+    default: m.TechnicalDocumentsListPage,
+  }))
+);
+
 const ReportsPage = lazy(() =>
   import('@/modules/reports/pages/ReportsPage').then((m) => ({ default: m.ReportsPage }))
 );
@@ -346,6 +352,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <InventoryItemEditPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.TECHNICAL_DOCUMENTS,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <TechnicalDocumentsListPage />
               </Suspense>
             ),
           },

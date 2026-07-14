@@ -18,7 +18,7 @@ import {
   WORK_ORDER_PRIORITY_LABELS,
 } from '@/constants';
 import type { WorkOrder, WorkOrderFilters, TableColumn } from '@/types';
-import { formatDate, downloadBlob } from '@/lib/utils';
+import { formatDate, downloadCsv } from '@/lib/utils';
 
 const COLUMNS: TableColumn<WorkOrder>[] = [
   {
@@ -102,14 +102,8 @@ const COLUMNS: TableColumn<WorkOrder>[] = [
 
 const EMPTY_FILTERS: WorkOrderFilters = {};
 
-// Escapa un valor para insertarlo como celda CSV (envuelve en comillas si contiene comas, comillas o saltos de línea)
-function csvEscape(value: string): string {
-  if (/[",\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
-
+// MODIFICADO: usa el helper compartido `downloadCsv` (lib/utils) en lugar de armar el CSV a mano
+// ANTERIOR: definía su propio `csvEscape` local y armaba el blob/descarga manualmente
 // Genera un CSV con las columnas visibles del listado (numero, tipo, aeronave, cliente, estado, prioridad, ingreso, límite) y lo descarga en el navegador
 function exportWorkOrdersToCsv(orders: WorkOrder[]): void {
   const headers = [
@@ -122,23 +116,17 @@ function exportWorkOrdersToCsv(orders: WorkOrder[]): void {
     'Fecha de ingreso',
     'Fecha estimada de fin',
   ];
-  const rows = orders.map((o) =>
-    [
-      o.number,
-      WORK_ORDER_TYPE_LABELS[o.type],
-      o.aircraftRegistration,
-      o.clientName,
-      WORK_ORDER_STATUS_LABELS[o.status],
-      WORK_ORDER_PRIORITY_LABELS[o.priority],
-      o.intakeDate ? formatDate(o.intakeDate) : '',
-      formatDate(o.estimatedEndDate),
-    ]
-      .map((cell) => csvEscape(String(cell)))
-      .join(',')
-  );
-  const csvContent = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([`﻿${csvContent}`], { type: 'text/csv;charset=utf-8;' });
-  downloadBlob(blob, `ordenes-de-trabajo-${new Date().toISOString().split('T')[0]}.csv`);
+  const rows = orders.map((o) => [
+    o.number,
+    WORK_ORDER_TYPE_LABELS[o.type],
+    o.aircraftRegistration,
+    o.clientName,
+    WORK_ORDER_STATUS_LABELS[o.status],
+    WORK_ORDER_PRIORITY_LABELS[o.priority],
+    o.intakeDate ? formatDate(o.intakeDate) : '',
+    formatDate(o.estimatedEndDate),
+  ]);
+  downloadCsv(`ordenes-de-trabajo-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
 }
 
 // MODIFICADO: agrega contadores de Pendientes/En proceso/Finalizadas sobre los datos cargados y conecta el botón Exportar a una descarga CSV del lado del cliente

@@ -5,6 +5,7 @@ import type {
   InspectionReportFilters,
   AircraftStatusReport,
   InventoryReport,
+  MonthlyWorkshopHoursReport,
   ApiResponse,
 } from '@/types';
 import apiClient from '@/lib/axios';
@@ -36,6 +37,16 @@ export const reportsService = {
 
   async getInventoryReport(): Promise<InventoryReport> {
     const { data } = await apiClient.get<ApiResponse<InventoryReport>>('/reports/inventory');
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al generar reporte');
+    return data.data;
+  },
+
+  // Horas de taller agrupadas por mes, usadas por el gráfico "Horas de Taller por Mes" de ReportsPage
+  async getMonthlyWorkshopHours(months = 7): Promise<MonthlyWorkshopHoursReport> {
+    const { data } = await apiClient.get<ApiResponse<MonthlyWorkshopHoursReport>>(
+      '/reports/work-orders/monthly-hours',
+      { params: { months } }
+    );
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al generar reporte');
     return data.data;
   },
