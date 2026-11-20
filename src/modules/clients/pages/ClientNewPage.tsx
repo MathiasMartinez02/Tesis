@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { clientSchema, type ClientFormData } from '../schemas/client.schema';
 import { ArrowLeft, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -10,23 +10,6 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Ca
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { ROUTES } from '@/constants';
 import { useCreateClient } from '@/modules/clients/hooks/useClients';
-
-const clientSchema = z.object({
-  name: z.string().min(2, 'Mínimo 2 caracteres'),
-  businessName: z.string().min(2, 'Mínimo 2 caracteres'),
-  taxId: z
-    .string()
-    .regex(/^\d{2}-\d{8}-\d$/, 'Formato CUIT: XX-XXXXXXXX-X'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(7, 'Teléfono inválido'),
-  address: z.string().min(5, 'Requerido'),
-  city: z.string().min(2, 'Requerido'),
-  province: z.string().min(2, 'Requerido'),
-  contactPerson: z.string().optional(),
-  contactPhone: z.string().optional(),
-});
-
-type ClientFormData = z.infer<typeof clientSchema>;
 
 export function ClientNewPage(): JSX.Element {
   const navigate = useNavigate();
@@ -56,8 +39,8 @@ export function ClientNewPage(): JSX.Element {
       className="max-w-3xl"
     >
       <PageHeader
-        title="Nuevo Cliente"
-        description="Registrá un nuevo cliente u operador aéreo"
+        title="Registrar Cliente"
+        description="Registrá un cliente u operador aéreo"
         actions={
           <Button
             variant="ghost"

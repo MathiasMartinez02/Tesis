@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { loginSchema, type LoginFormData } from '../schemas/login.schema';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -13,16 +13,17 @@ import { useUIStore } from '@/store/uiStore';
 import { ROUTES } from '@/constants';
 import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
 
-const loginSchema = z.object({
-  email: z.string().email('Email inválido').min(1, 'Requerido'),
-  password: z.string().min(1, 'Requerido'),
-});
+const SHOW_DEMO_ACCOUNTS = import.meta.env.DEV;
 
-type LoginFormData = z.infer<typeof loginSchema>;
-
-// Usuarios demo para facilitar el acceso en desarrollo
 const DEMO_ACCOUNTS = [
-  { email: 'admin@sigma.aero', label: 'Administrador', color: 'bg-purple-100 text-purple-700' },
+  { email: 'gerente@sigma.aero', label: 'Gerente', color: 'bg-purple-100 text-purple-700' },
+  {
+    email: 'jefetaller@sigma.aero',
+    label: 'Jefe de Taller',
+    color: 'bg-orange-100 text-orange-700',
+  },
+  { email: 'inspector@sigma.aero', label: 'Inspector', color: 'bg-emerald-100 text-emerald-700' },
+  { email: 'admin@sigma.aero', label: 'Administración', color: 'bg-pink-100 text-pink-700' },
 ];
 
 export function LoginPage(): JSX.Element {
@@ -33,7 +34,8 @@ export function LoginPage(): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? ROUTES.DASHBOARD;
+  const from =
+    (location.state as { from?: { pathname: string } })?.from?.pathname ?? ROUTES.DASHBOARD;
 
   const {
     register,
@@ -61,6 +63,7 @@ export function LoginPage(): JSX.Element {
     }
   };
 
+  // Completa el formulario con una cuenta de seed (solo desarrollo)
   const fillDemo = (email: string): void => {
     setValue('email', email);
     setValue('password', 'sigma2026');
@@ -82,39 +85,36 @@ export function LoginPage(): JSX.Element {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">
-          Iniciar sesión
-        </h2>
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">Iniciar sesión</h2>
         <p className="mt-1.5 text-sm text-surface-500">
           Ingresá tus credenciales para acceder al sistema
         </p>
       </div>
 
-      {/* Demo accounts */}
-      <div className="mt-6">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-surface-400">
-          Acceso rápido (demo)
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.email}
-              type="button"
-              onClick={() => fillDemo(acc.email)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-80 ${acc.color}`}
-            >
-              {acc.label}
-            </button>
-          ))}
+      {SHOW_DEMO_ACCOUNTS && (
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-surface-400">
+            Acceso rápido (demo)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {DEMO_ACCOUNTS.map((acc) => (
+              <button
+                key={acc.email}
+                type="button"
+                onClick={() => fillDemo(acc.email)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-80 ${acc.color}`}
+              >
+                {acc.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-2xs text-surface-400">
+            Solo en desarrollo · contraseña de seed: sigma2026
+          </p>
         </div>
-        <p className="mt-1 text-2xs text-surface-400">Contraseña: sigma2026</p>
-      </div>
+      )}
 
-      <form
-        onSubmit={(e) => void handleSubmit(onSubmit)(e)}
-        noValidate
-        className="mt-6 space-y-4"
-      >
+      <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate className="mt-6 space-y-4">
         <Input
           type="email"
           label="Email"
@@ -164,17 +164,15 @@ export function LoginPage(): JSX.Element {
           </div>
         )}
 
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full"
-          isLoading={isSubmitting}
-        >
+        <Button type="submit" size="lg" className="w-full" isLoading={isSubmitting}>
           Ingresar al sistema
         </Button>
       </form>
 
-      <ForgotPasswordModal isOpen={isForgotPasswordOpen} onClose={() => setIsForgotPasswordOpen(false)} />
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+      />
     </motion.div>
   );
 }

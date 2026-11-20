@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { userFormSchema, type UserFormData } from '../schemas/user.schema';
 import { UserPlus, Save } from 'lucide-react';
 import { Modal } from '@/shared/components/Modal/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -9,38 +9,13 @@ import { Input } from '@/shared/components/ui/Input';
 import { Select } from '@/shared/components/ui/Select';
 import { useCreateUser, useUpdateUser } from '../hooks/useUsers';
 import { ROLE_LABELS } from '@/constants';
+import { toDateInput } from '@/lib/utils';
 import type { SelectOption, User, UserRole } from '@/types';
 
 const ROLE_OPTIONS: SelectOption[] = Object.entries(ROLE_LABELS).map(([value, label]) => ({
   value,
   label,
 }));
-
-// Esquema del formulario de alta/edicion de usuario: password solo se exige al crear (ver refine)
-const userFormSchema = z
-  .object({
-    email: z.string().min(1, 'El email es requerido').email('Email invalido'),
-    password: z.string().optional(),
-    firstName: z.string().min(1, 'El nombre es requerido'),
-    lastName: z.string().min(1, 'El apellido es requerido'),
-    role: z.enum([
-      'Gerente',
-      'OficinaTecnica',
-      'Inspector',
-      'JefeTaller',
-      'Mecanico',
-      'Panol',
-      'Administracion',
-    ]),
-    licenseNumber: z.string().optional(),
-    phone: z.string().optional(),
-  })
-  .refine((data) => data.password === undefined || data.password.length === 0 || data.password.length >= 8, {
-    message: 'La contraseña debe tener al menos 8 caracteres',
-    path: ['password'],
-  });
-
-type UserFormData = z.infer<typeof userFormSchema>;
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -77,13 +52,24 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps): JS
               lastName: user.lastName,
               role: user.role,
               licenseNumber: user.licenseNumber ?? '',
+              licenseExpiry: toDateInput(user.licenseExpiry),
               phone: user.phone ?? '',
             }
-          : { email: '', password: '', firstName: '', lastName: '', role: 'Mecanico', licenseNumber: '', phone: '' }
+          : {
+              email: '',
+              password: '',
+              firstName: '',
+              lastName: '',
+              role: 'Mecanico',
+              licenseNumber: '',
+              licenseExpiry: '',
+              phone: '',
+            }
       );
     }
   }, [isOpen, user, reset]);
 
+  // Alta o edicion segun el modo, conservando el avatar al editar
   const onSubmit = (data: UserFormData): void => {
     if (isEditMode && user) {
       updateUser(
@@ -93,8 +79,10 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps): JS
             firstName: data.firstName,
             lastName: data.lastName,
             role: data.role as UserRole,
-            licenseNumber: data.licenseNumber || undefined,
-            phone: data.phone || undefined,
+            licenseNumber: data.licenseNumber,
+            licenseExpiry: data.licenseExpiry,
+            phone: data.phone,
+            avatarUrl: user.avatarUrl,
           },
         },
         { onSuccess: onClose }
@@ -109,8 +97,9 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps): JS
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role as UserRole,
-        licenseNumber: data.licenseNumber || undefined,
-        phone: data.phone || undefined,
+        licenseNumber: data.licenseNumber,
+        licenseExpiry: data.licenseExpiry,
+        phone: data.phone,
       },
       { onSuccess: onClose }
     );
@@ -122,11 +111,11 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps): JS
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditMode ? 'Editar Usuario' : 'Nuevo Usuario'}
+      title={isEditMode ? 'Editar Usuario' : 'Registrar Usuario'}
       description={
         isEditMode
           ? 'Modificá los datos de perfil y el rol del usuario'
-          : 'Creá una cuenta nueva para un usuario del sistema'
+          : 'Creá una cuenta para un usuario del sistema'
       }
       footer={
         <>
@@ -178,8 +167,14 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps): JS
         />
         <div className="grid grid-cols-2 gap-3">
           <Input label="N° de licencia (opcional)" error={errors.licenseNumber?.message} {...register('licenseNumber')} />
-          <Input label="Teléfono (opcional)" error={errors.phone?.message} {...register('phone')} />
+          <Input
+            type="date"
+            label="Vencimiento de licencia (opcional)"
+            error={errors.licenseExpiry?.message}
+            {...register('licenseExpiry')}
+          />
         </div>
+        <Input label="Teléfono (opcional)" error={errors.phone?.message} {...register('phone')} />
       </form>
     </Modal>
   );

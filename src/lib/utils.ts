@@ -39,6 +39,11 @@ export function formatFlightHours(hours: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Fecha ISO del backend a valor de input type=date
+export function toDateInput(value?: string | null): string {
+  return value ? value.slice(0, 10) : '';
+}
+
 /** Formatea moneda en ARS */
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('es-AR', {

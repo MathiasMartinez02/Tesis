@@ -11,7 +11,6 @@ import type {
 import { MOCK_INVENTORY } from '@/mocks/inventory.mock';
 import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
-import { isAxiosError } from 'axios';
 
 // MODIFICADO: agrega el switch ENV.ENABLE_MOCK_API para alternar entre datos mockeados y la API real, igual que aircraft.service.ts y workOrders.service.ts
 // ANTERIOR: siempre llamaba a la API real, sin soporte de modo mock
@@ -121,8 +120,7 @@ export const inventoryService = {
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar ítem');
   },
 
-  // Elimina un item de inventario; el backend rechaza la baja con un error de negocio (400) si currentStock > 0,
-  // por lo que se captura el AxiosError y se relanza con el mensaje real que viene en el body en vez del genérico de axios
+  // Baja de item de inventario
   async delete(id: string): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));
@@ -136,16 +134,8 @@ export const inventoryService = {
       return;
     }
 
-    try {
-      const { data } = await apiClient.delete<ApiResponse<null>>(`/inventory/${id}`);
-      if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al eliminar ítem');
-    } catch (err) {
-      if (isAxiosError<ApiResponse<null>>(err) && err.response?.data) {
-        const backendMessage = err.response.data.errors?.[0] ?? err.response.data.message;
-        if (backendMessage) throw new Error(backendMessage);
-      }
-      throw err;
-    }
+    const { data } = await apiClient.delete<ApiResponse<null>>(`/inventory/${id}`);
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al eliminar ítem');
   },
 
   async addMovement(
@@ -182,17 +172,16 @@ export const inventoryService = {
     return data.data;
   },
 
-  // Aprueba un movimiento de tipo Salida; el backend marca approvedById/approvedByName en la respuesta
-  async approveMovement(itemId: string, movementId: string): Promise<InventoryMovement> {
+  // Aprobacion de una salida de stock
+  async approveMovement(itemId: string, movementId: string): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 300));
       throw new Error('Aprobación de movimientos no soportada en modo mock');
     }
 
-    const { data } = await apiClient.patch<ApiResponse<InventoryMovement>>(
+    const { data } = await apiClient.patch<ApiResponse<null>>(
       `/inventory/${itemId}/movements/${movementId}/approve`
     );
-    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al aprobar movimiento');
-    return data.data;
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al aprobar movimiento');
   },
 };

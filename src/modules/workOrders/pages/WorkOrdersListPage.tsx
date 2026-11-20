@@ -19,6 +19,7 @@ import {
 } from '@/constants';
 import type { WorkOrder, WorkOrderFilters, TableColumn } from '@/types';
 import { formatDate, downloadCsv } from '@/lib/utils';
+import { RoleGuard } from '@/routes/RoleGuard';
 
 const COLUMNS: TableColumn<WorkOrder>[] = [
   {
@@ -190,13 +191,15 @@ export function WorkOrdersListPage(): JSX.Element {
             >
               Exportar
             </Button>
-            <Button
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleNewOT}
-            >
-              Nueva OT
-            </Button>
+            <RoleGuard permission="canManageWorkOrders">
+              <Button
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleNewOT}
+              >
+                Registrar OT
+              </Button>
+            </RoleGuard>
           </>
         }
       />
@@ -233,7 +236,7 @@ export function WorkOrdersListPage(): JSX.Element {
         isLoading={isLoading}
         onRowClick={handleRowClick}
         emptyMessage="No hay órdenes de trabajo"
-        emptyDescription="Creá la primera orden de trabajo con el botón Nueva OT."
+        emptyDescription="Creá la primera orden de trabajo con el botón Registrar OT."
         stickyHeader
       />
 

@@ -12,6 +12,7 @@ import { AddTechnicalDocumentModal } from '../components/AddTechnicalDocumentMod
 import { TECHNICAL_DOCUMENT_TYPE_LABELS, TECHNICAL_DOCUMENT_TYPE_COLORS } from '@/constants';
 import type { TechnicalDocument, TechnicalDocumentFilters, SelectOption, TableColumn } from '@/types';
 import { formatDate, cn } from '@/lib/utils';
+import { TECHNICAL_DOCUMENTS_MANAGE } from '@/lib/permissions';
 
 const EMPTY_FILTERS: TechnicalDocumentFilters = {};
 
@@ -125,7 +126,7 @@ export function TechnicalDocumentsListPage(): JSX.Element {
           expiringDocs && expiringDocs.length > 0 ? ` · ${expiringDocs.length} por vencer` : ''
         }`}
         actions={
-          <RoleGuard permission="canSignDocuments">
+          <RoleGuard permission={TECHNICAL_DOCUMENTS_MANAGE}>
             <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setIsModalOpen(true)}>
               Cargar Documento
             </Button>

@@ -103,8 +103,8 @@ export interface CreateFlightRecordPayload {
   notes?: string;
 }
 
-/** UpdateAircraftPayload — payload para PUT /aircraft/{id}, mismos campos que la creación */
-export type UpdateAircraftPayload = CreateAircraftPayload;
+/** UpdateAircraftPayload — payload para PUT /aircraft/{id}; matricula y cliente no se modifican */
+export type UpdateAircraftPayload = Omit<CreateAircraftPayload, 'registration' | 'clientId'>;
 
 /** CreateAircraftDocumentPayload — payload para POST /aircraft/{id}/documents */
 export interface CreateAircraftDocumentPayload {

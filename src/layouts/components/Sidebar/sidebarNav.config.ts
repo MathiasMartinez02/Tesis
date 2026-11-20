@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/constants';
-import type { UserRole, UserPermissions } from '@/types';
+import type { UserRole } from '@/types';
+import { APPOINTMENTS_MANAGE, TECHNICAL_DOCUMENTS_MANAGE, type PermissionRequirement } from '@/lib/permissions';
 
 export interface NavItem {
   id: string;
@@ -23,7 +24,7 @@ export interface NavItem {
   path: string;
   badge?: number;
   children?: NavItem[];
-  requiredPermission?: keyof UserPermissions;
+  requiredPermission?: PermissionRequirement;
   allowedRoles?: UserRole[];
 }
 
@@ -62,7 +63,7 @@ export const NAV_SECTIONS: NavSection[] = [
         label: 'Turnos',
         icon: CalendarClock,
         path: ROUTES.APPOINTMENTS,
-        requiredPermission: 'canManageWorkOrders',
+        requiredPermission: APPOINTMENTS_MANAGE,
       },
       {
         id: 'workshop',
@@ -142,7 +143,7 @@ export const NAV_SECTIONS: NavSection[] = [
         label: 'Documentación Técnica',
         icon: FileText,
         path: ROUTES.TECHNICAL_DOCUMENTS,
-        requiredPermission: 'canSignDocuments',
+        requiredPermission: TECHNICAL_DOCUMENTS_MANAGE,
       },
     ],
   },

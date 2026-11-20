@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Plane, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore, selectUser, selectUserPermissions } from '@/store/authStore';
+import { hasPermission } from '@/lib/permissions';
 import { getInitials } from '@/lib/utils';
 import { ROLE_LABELS } from '@/constants';
 import { NAV_SECTIONS } from './sidebarNav.config';
@@ -82,11 +83,9 @@ export function Sidebar(): JSX.Element {
       {/* ── Navegación ──────────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-thin" aria-label="Navegación principal">
         {NAV_SECTIONS.map((section) => {
-          // Filtrar items por permisos
-          const visibleItems = section.items.filter((item) => {
-            if (!item.requiredPermission) return true;
-            return permissions?.[item.requiredPermission] === true;
-          });
+          const visibleItems = section.items.filter(
+            (item) => !item.requiredPermission || hasPermission(permissions, item.requiredPermission)
+          );
 
           if (visibleItems.length === 0) return null;
 

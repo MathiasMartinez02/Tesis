@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { inventoryItemSchema, type InventoryItemFormData } from '../schemas/inventoryItem.schema';
 import { ArrowLeft, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -13,43 +13,6 @@ import { ROUTES, INVENTORY_CATEGORY_LABELS } from '@/constants';
 import { useCreateInventoryItem, useAddInventoryMovement } from '@/modules/inventory/hooks/useInventory';
 import { useUIStore } from '@/store/uiStore';
 import type { SelectOption } from '@/types';
-
-// MODIFICADO: se agrega el campo opcional maximumStock, con validacion de que si se informa debe ser mayor a minimumStock
-// ANTERIOR: no incluia maximumStock; los valores del enum ya coincidian con InventoryCategory (PascalCase) para poder enviarse tal cual al payload de creación
-const inventorySchema = z
-  .object({
-    partNumber: z.string().min(1, 'Requerido'),
-    description: z.string().min(5, 'Mínimo 5 caracteres'),
-    category: z.enum([
-      'RepuestoMotor',
-      'RepuestoCelula',
-      'Consumible',
-      'Herramienta',
-      'Material',
-      'Instrumento',
-      'Avionico',
-    ]),
-    manufacturer: z.string().min(1, 'Requerido'),
-    location: z.string().min(1, 'Requerido'),
-    currentStock: z.number().min(0),
-    minimumStock: z.number().min(0),
-    // El input numerico vacio llega como NaN via valueAsNumber; se normaliza a undefined antes de validar
-    maximumStock: z.preprocess(
-      (val) => (typeof val === 'number' && Number.isNaN(val) ? undefined : val),
-      z.number().min(0).optional()
-    ),
-    unit: z.string().min(1, 'Requerido'),
-    unitCost: z.number().min(0),
-    certificationRequired: z.boolean(),
-    certificateNumber: z.string().optional(),
-    expiryDate: z.string().optional(),
-  })
-  .refine(
-    (data) => data.maximumStock === undefined || data.maximumStock > data.minimumStock,
-    { message: 'El stock máximo debe ser mayor al stock mínimo', path: ['maximumStock'] }
-  );
-
-type InventoryFormData = z.infer<typeof inventorySchema>;
 
 // Construye las opciones del select de categoría a partir de las etiquetas oficiales de InventoryCategory
 const CATEGORY_OPTIONS: SelectOption[] = Object.entries(INVENTORY_CATEGORY_LABELS).map(
@@ -76,8 +39,8 @@ export function InventoryItemNewPage(): JSX.Element {
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<InventoryFormData>({
-    resolver: zodResolver(inventorySchema),
+  } = useForm<InventoryItemFormData>({
+    resolver: zodResolver(inventoryItemSchema),
     defaultValues: {
       currentStock: 0,
       minimumStock: 1,
@@ -92,7 +55,7 @@ export function InventoryItemNewPage(): JSX.Element {
   // se dispara automáticamente un movimiento de entrada por esa cantidad para que el alta se sienta como un solo paso.
   // Si el movimiento falla se avisa con un toast de advertencia pero no se bloquea la navegación (el ítem ya se creó).
   // ANTERIOR: enviaba el formulario al backend con useCreateInventoryItem y navegaba al listado al finalizar, sin cargar stock
-  const onSubmit = (data: InventoryFormData): void => {
+  const onSubmit = (data: InventoryItemFormData): void => {
     createItem(data, {
       onSuccess: (item) => {
         if (data.currentStock > 0) {
@@ -132,8 +95,8 @@ export function InventoryItemNewPage(): JSX.Element {
       className="max-w-3xl"
     >
       <PageHeader
-        title="Nuevo Ítem de Inventario"
-        description="Agregá un nuevo repuesto o material al pañol"
+        title="Registrar Ítem de Inventario"
+        description="Agregá un repuesto o material al pañol"
         actions={
           <Button
             variant="ghost"

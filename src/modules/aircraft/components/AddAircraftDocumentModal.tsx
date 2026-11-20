@@ -1,21 +1,12 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { aircraftDocumentSchema, type AircraftDocumentFormData } from '../schemas/aircraft.schema';
 import { UploadCloud } from 'lucide-react';
 import { Modal } from '@/shared/components/Modal/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { useAddAircraftDocument } from '../hooks/useAircraft';
-
-const documentSchema = z.object({
-  name: z.string().min(1, 'Requerido'),
-  type: z.string().min(1, 'Requerido'),
-  fileUrl: z.string().min(1, 'Requerido'),
-  expiryDate: z.string().optional(),
-});
-
-type DocumentFormData = z.infer<typeof documentSchema>;
 
 interface AddAircraftDocumentModalProps {
   aircraftId: string;
@@ -36,8 +27,8 @@ export function AddAircraftDocumentModal({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<DocumentFormData>({
-    resolver: zodResolver(documentSchema),
+  } = useForm<AircraftDocumentFormData>({
+    resolver: zodResolver(aircraftDocumentSchema),
     defaultValues: { name: '', type: '', fileUrl: '', expiryDate: '' },
   });
 
@@ -47,12 +38,12 @@ export function AddAircraftDocumentModal({
   }, [isOpen, reset]);
 
   // Envía el documento nuevo mediante useAddAircraftDocument y cierra el modal si se guarda con éxito
-  const onSubmit = async (data: DocumentFormData): Promise<void> => {
+  const onSubmit = async (data: AircraftDocumentFormData): Promise<void> => {
     await addDocument.mutateAsync({
       name: data.name,
       type: data.type,
       fileUrl: data.fileUrl,
-      expiryDate: data.expiryDate || undefined,
+      expiryDate: data.expiryDate,
     });
     onClose();
   };

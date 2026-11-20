@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { budgetSchema, type BudgetFormData } from '../schemas/budget.schema';
 import { FileText } from 'lucide-react';
 import { Modal } from '@/shared/components/Modal/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -11,17 +11,6 @@ import { useCreateBudget } from '../hooks/useBudgets';
 import { useClients } from '@/modules/clients/hooks/useClients';
 import { useAircraft } from '@/modules/aircraft/hooks/useAircraft';
 import type { SelectOption } from '@/types';
-
-// Esquema de validacion: cliente y descripcion requeridos, monto mayor a cero, aeronave opcional
-const budgetSchema = z.object({
-  clientId: z.string().min(1, 'Seleccionar cliente'),
-  aircraftId: z.string().optional(),
-  description: z.string().min(1, 'La descripción es requerida'),
-  amount: z.coerce.number().positive('El monto debe ser mayor a cero'),
-  notes: z.string().optional(),
-});
-
-type BudgetFormData = z.infer<typeof budgetSchema>;
 
 interface AddBudgetModalProps {
   isOpen: boolean;
@@ -73,10 +62,10 @@ export function AddBudgetModal({ isOpen, onClose }: AddBudgetModalProps): JSX.El
   const onSubmit = async (data: BudgetFormData): Promise<void> => {
     await createBudget.mutateAsync({
       clientId: data.clientId,
-      aircraftId: data.aircraftId || null,
+      aircraftId: data.aircraftId ?? null,
       description: data.description,
       amount: data.amount,
-      notes: data.notes?.trim() ? data.notes : null,
+      notes: data.notes ?? null,
     });
     onClose();
   };
@@ -85,7 +74,7 @@ export function AddBudgetModal({ isOpen, onClose }: AddBudgetModalProps): JSX.El
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nuevo Presupuesto"
+      title="Registrar Presupuesto"
       description="Válido por 30 días desde la fecha de creación"
       size="sm"
       footer={

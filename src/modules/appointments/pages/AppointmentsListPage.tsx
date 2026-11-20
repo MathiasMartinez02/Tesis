@@ -21,6 +21,8 @@ import {
 } from '@/constants';
 import type { Appointment, AppointmentFilters, AppointmentStatus, SelectOption, TableColumn } from '@/types';
 import { formatDate } from '@/lib/utils';
+import { RoleGuard } from '@/routes/RoleGuard';
+import { APPOINTMENTS_MANAGE } from '@/lib/permissions';
 
 const EMPTY_FILTERS: AppointmentFilters = {};
 
@@ -126,43 +128,49 @@ export function AppointmentsListPage(): JSX.Element {
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
           {row.status === 'Solicitado' && (
-            <Button
-              variant="outline"
-              size="xs"
-              leftIcon={<CheckCircle2 size={13} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleConfirm(row);
-              }}
-            >
-              Confirmar
-            </Button>
+            <RoleGuard permission={APPOINTMENTS_MANAGE}>
+              <Button
+                variant="outline"
+                size="xs"
+                leftIcon={<CheckCircle2 size={13} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleConfirm(row);
+                }}
+              >
+                Confirmar
+              </Button>
+            </RoleGuard>
           )}
           {row.status !== 'Cancelado' && row.status !== 'ConvertidoOT' && (
-            <Button
-              variant="ghost"
-              size="xs"
-              leftIcon={<XCircle size={13} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCancel(row);
-              }}
-            >
-              Cancelar
-            </Button>
+            <RoleGuard permission={APPOINTMENTS_MANAGE}>
+              <Button
+                variant="ghost"
+                size="xs"
+                leftIcon={<XCircle size={13} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancel(row);
+                }}
+              >
+                Cancelar
+              </Button>
+            </RoleGuard>
           )}
           {row.status === 'Confirmado' && (
-            <Button
-              variant="primary"
-              size="xs"
-              leftIcon={<ArrowRightCircle size={13} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                void handleConvert(row);
-              }}
-            >
-              Convertir en OT
-            </Button>
+            <RoleGuard permission="canManageWorkOrders">
+              <Button
+                variant="primary"
+                size="xs"
+                leftIcon={<ArrowRightCircle size={13} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleConvert(row);
+                }}
+              >
+                Convertir en OT
+              </Button>
+            </RoleGuard>
           )}
         </div>
       ),
@@ -184,9 +192,11 @@ export function AppointmentsListPage(): JSX.Element {
         title="Turnos"
         description={`${data?.total ?? 0} turnos registrados`}
         actions={
-          <Button size="sm" leftIcon={<Plus size={15} />} onClick={handleNewAppointment}>
-            Nuevo Turno
-          </Button>
+          <RoleGuard permission={APPOINTMENTS_MANAGE}>
+            <Button size="sm" leftIcon={<Plus size={15} />} onClick={handleNewAppointment}>
+              Registrar Turno
+            </Button>
+          </RoleGuard>
         }
       />
 
@@ -206,7 +216,7 @@ export function AppointmentsListPage(): JSX.Element {
         columns={columns}
         isLoading={isLoading}
         emptyMessage="No hay turnos"
-        emptyDescription="Creá el primer turno con el botón Nuevo Turno."
+        emptyDescription="Creá el primer turno con el botón Registrar Turno."
         stickyHeader
       />
 

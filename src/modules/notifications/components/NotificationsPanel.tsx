@@ -1,6 +1,8 @@
-import { AlertTriangle, FileWarning, Package, PackageX, ClipboardCheck, CheckCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, FileWarning, Package, PackageX, ClipboardCheck, CheckCheck, KeyRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, formatRelativeTime } from '@/lib/utils';
+import { ROUTES } from '@/constants';
 import type { Notification, NotificationType } from '@/types';
 import {
   useNotifications,
@@ -21,15 +23,22 @@ const NOTIFICATION_ICON_MAP: Record<NotificationType, { icon: typeof AlertTriang
   StockBajo: { icon: Package, className: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
   StockSobre: { icon: Package, className: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
   StockVencido: { icon: PackageX, className: 'text-red-600 bg-red-50 dark:bg-red-900/20' },
+  SolicitudCambioPassword: { icon: KeyRound, className: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
+};
+
+const NOTIFICATION_ROUTES: Partial<Record<NotificationType, string>> = {
+  SolicitudCambioPassword: ROUTES.SETTINGS_USERS,
 };
 
 interface NotificationItemProps {
   notification: Notification;
   onRead: (id: string) => void;
+  onNavigate: (route: string) => void;
 }
 
-// Renderiza una notificacion individual, marcandola como leida al hacer click
-function NotificationItem({ notification, onRead }: NotificationItemProps) {
+// Notificacion individual: la marca como leida y, si tiene destino, navega
+function NotificationItem({ notification, onRead, onNavigate }: NotificationItemProps) {
+  const route = NOTIFICATION_ROUTES[notification.type];
   const { icon: Icon, className } = NOTIFICATION_ICON_MAP[notification.type] ?? {
     icon: AlertTriangle,
     className: 'text-surface-600 bg-surface-100',
@@ -37,7 +46,10 @@ function NotificationItem({ notification, onRead }: NotificationItemProps) {
 
   return (
     <button
-      onClick={() => !notification.isRead && onRead(notification.id)}
+      onClick={() => {
+        if (!notification.isRead) onRead(notification.id);
+        if (route) onNavigate(route);
+      }}
       className={cn(
         'flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-50 dark:hover:bg-surface-700',
         !notification.isRead && 'bg-aviation-50/60 dark:bg-aviation-900/10'
@@ -65,6 +77,7 @@ export function NotificationsPanel({ isOpen, onClose }: NotificationsPanelProps)
   const { data, isLoading } = useNotifications({ pageSize: 10 });
   const { mutate: markAsRead } = useMarkNotificationAsRead();
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllNotificationsAsRead();
+  const navigate = useNavigate();
 
   const notifications = data?.data ?? [];
 
@@ -100,7 +113,15 @@ export function NotificationsPanel({ isOpen, onClose }: NotificationsPanelProps)
                 <p className="px-3 py-4 text-center text-sm text-surface-500">Sin notificaciones</p>
               )}
               {notifications.map((notification) => (
-                <NotificationItem key={notification.id} notification={notification} onRead={markAsRead} />
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onRead={markAsRead}
+                  onNavigate={(route) => {
+                    onClose();
+                    navigate(route);
+                  }}
+                />
               ))}
             </div>
           </motion.div>

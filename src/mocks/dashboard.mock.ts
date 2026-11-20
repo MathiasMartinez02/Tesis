@@ -110,7 +110,7 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
     {
       id: 'act-003',
       type: 'work_order_created',
-      description: 'Nueva OT creada - Reparación LV-KRT',
+      description: 'OT registrada - Reparación LV-KRT',
       userId: 'usr-004',
       userName: 'Roberto Vásquez',
       userRole: 'Jefe de Taller',

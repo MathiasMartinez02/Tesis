@@ -9,6 +9,7 @@ import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { useClient, useUpdateClientStatus } from '../hooks/useClients';
 import { ROUTES, buildRoute } from '@/constants';
 import { formatDate } from '@/lib/utils';
+import { RoleGuard } from '@/routes/RoleGuard';
 
 // Pagina de detalle de un cliente: datos fiscales/contacto, aeronaves asociadas y OT recientes
 export function ClientDetailPage(): JSX.Element {
@@ -47,23 +48,27 @@ export function ClientDetailPage(): JSX.Element {
             >
               Volver
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Pencil size={14} />}
-              onClick={() => navigate(buildRoute(ROUTES.CLIENT_EDIT, { id: client.id }))}
-            >
-              Editar
-            </Button>
-            <Button
-              variant={client.isActive ? 'destructive' : 'success'}
-              size="sm"
-              leftIcon={<Power size={14} />}
-              isLoading={isUpdatingStatus}
-              onClick={handleToggleStatus}
-            >
-              {client.isActive ? 'Desactivar' : 'Activar'}
-            </Button>
+            <RoleGuard permission="canManageClients">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Pencil size={14} />}
+                onClick={() => navigate(buildRoute(ROUTES.CLIENT_EDIT, { id: client.id }))}
+              >
+                Editar
+              </Button>
+            </RoleGuard>
+            <RoleGuard permission="canManageClients">
+              <Button
+                variant={client.isActive ? 'destructive' : 'success'}
+                size="sm"
+                leftIcon={<Power size={14} />}
+                isLoading={isUpdatingStatus}
+                onClick={handleToggleStatus}
+              >
+                {client.isActive ? 'Desactivar' : 'Activar'}
+              </Button>
+            </RoleGuard>
           </div>
         }
       />

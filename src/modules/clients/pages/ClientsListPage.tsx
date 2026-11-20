@@ -10,6 +10,7 @@ import { Spinner } from '@/shared/components/ui/Spinner';
 import { ROUTES, buildRoute } from '@/constants';
 import { useClients } from '../hooks/useClients';
 import type { Client, ClientFilters } from '@/types';
+import { RoleGuard } from '@/routes/RoleGuard';
 
 // MODIFICADO: agrega navegacion al detalle del cliente al hacer click en la tarjeta y un boton "Editar" que va directo a CLIENT_EDIT sin pasar por el detalle
 // ANTERIOR: la tarjeta no tenia onClick ni boton de edicion, solo mostraba los datos
@@ -39,17 +40,19 @@ function ClientCard({ client }: { client: Client }): JSX.Element {
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${client.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
             {client.isActive ? 'Activo' : 'Inactivo'}
           </span>
-          <button
-            type="button"
-            aria-label={`Editar ${client.name}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(buildRoute(ROUTES.CLIENT_EDIT, { id: client.id }));
-            }}
-            className="rounded p-1 text-surface-400 hover:bg-surface-100 hover:text-aviation-600 dark:hover:bg-surface-700"
-          >
-            <Pencil size={14} />
-          </button>
+          <RoleGuard permission="canManageClients">
+            <button
+              type="button"
+              aria-label={`Editar ${client.name}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(buildRoute(ROUTES.CLIENT_EDIT, { id: client.id }));
+              }}
+              className="rounded p-1 text-surface-400 hover:bg-surface-100 hover:text-aviation-600 dark:hover:bg-surface-700"
+            >
+              <Pencil size={14} />
+            </button>
+          </RoleGuard>
         </div>
       </div>
 
@@ -100,9 +103,11 @@ export function ClientsListPage(): JSX.Element {
         title="Clientes"
         description={`${result?.total ?? 0} clientes registrados`}
         actions={
-          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.CLIENT_NEW)}>
-            Nuevo cliente
-          </Button>
+          <RoleGuard permission="canManageClients">
+            <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.CLIENT_NEW)}>
+              Registrar cliente
+            </Button>
+          </RoleGuard>
         }
       />
 

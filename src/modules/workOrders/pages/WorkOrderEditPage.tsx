@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { toDateInput } from '@/lib/utils';
+import { workOrderEditSchema, type WorkOrderEditFormData } from '../schemas/workOrder.schema';
 import { ArrowLeft, Save, Wrench, X, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -17,18 +18,6 @@ import { ROUTES, WORK_ORDER_TYPE_LABELS, WORK_ORDER_PRIORITY_LABELS, buildRoute 
 import { useWorkOrder, useUpdateWorkOrderFull } from '../hooks/useWorkOrders';
 import { useUsers } from '@/hooks/useUsers';
 import type { SelectOption, AssignedMechanic } from '@/types';
-
-// MODIFICADO: agrega intakeDate (fecha de ingreso) como campo editable
-// ANTERIOR: solo incluía priority, description, estimatedHours y estimatedEndDate
-const editSchema = z.object({
-  priority: z.enum(['Baja', 'Media', 'Alta', 'Critica']),
-  description: z.string().min(10, 'Mínimo 10 caracteres'),
-  estimatedHours: z.number().min(0.5, 'Mínimo 0.5 horas').max(999),
-  intakeDate: z.string().min(1, 'Fecha requerida'),
-  estimatedEndDate: z.string().min(1, 'Fecha requerida'),
-});
-
-type EditFormData = z.infer<typeof editSchema>;
 
 const PRIORITY_OPTIONS: SelectOption[] = Object.entries(WORK_ORDER_PRIORITY_LABELS).map(
   ([value, label]) => ({ value, label })
@@ -56,8 +45,8 @@ export function WorkOrderEditPage(): JSX.Element {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<EditFormData>({
-    resolver: zodResolver(editSchema),
+  } = useForm<WorkOrderEditFormData>({
+    resolver: zodResolver(workOrderEditSchema),
   });
 
   useEffect(() => {
@@ -66,10 +55,8 @@ export function WorkOrderEditPage(): JSX.Element {
         priority: order.priority,
         description: order.description,
         estimatedHours: order.estimatedHours,
-        intakeDate: order.intakeDate ? order.intakeDate.split('T')[0] : '',
-        estimatedEndDate: order.estimatedEndDate
-          ? order.estimatedEndDate.split('T')[0]
-          : '',
+        intakeDate: toDateInput(order.intakeDate),
+        estimatedEndDate: toDateInput(order.estimatedEndDate),
       });
       const assigned = order.assignedMechanics ?? [];
       setMechanics(assigned);
@@ -105,7 +92,7 @@ export function WorkOrderEditPage(): JSX.Element {
     setMechanics((prev) => prev.filter((m) => m.userId !== userId));
   };
 
-  const onSubmit = (data: EditFormData): void => {
+  const onSubmit = (data: WorkOrderEditFormData): void => {
     updateOrder(
       {
         id: order.id,

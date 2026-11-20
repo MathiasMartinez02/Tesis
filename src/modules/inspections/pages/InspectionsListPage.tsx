@@ -7,7 +7,7 @@ import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { SearchInput } from '@/shared/components/SearchInput/SearchInput';
 import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
-import { buildRoute, ROUTES } from '@/constants';
+import { buildRoute, ROUTES, getInspectionTypeLabel } from '@/constants';
 import { formatDate } from '@/lib/utils';
 import { useInspections } from '../hooks/useInspections';
 import type { Inspection, TableColumn } from '@/types';
@@ -30,7 +30,7 @@ const COLUMNS: TableColumn<Inspection>[] = [
   {
     key: 'type',
     header: 'Tipo',
-    render: (value) => String(value),
+    render: (value) => getInspectionTypeLabel(String(value)),
   },
   {
     key: 'aircraftRegistration',

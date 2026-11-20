@@ -28,6 +28,7 @@ import {
 import { AddAircraftDocumentModal } from '../components/AddAircraftDocumentModal';
 import { ROUTES, buildRoute, WORK_ORDER_TYPE_LABELS } from '@/constants';
 import { formatDate, formatFlightHours, daysUntil } from '@/lib/utils';
+import { RoleGuard } from '@/routes/RoleGuard';
 
 // MODIFICADO: agrega sección "Repuestos utilizados" con los items de inventory-usage de la aeronave
 // ANTERIOR: agregaba botón "Editar" en el header, sección "Historial de mantenimiento" con las OTs de la
@@ -94,14 +95,16 @@ export function AircraftDetailPage(): JSX.Element {
             </div>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          leftIcon={<Pencil size={14} />}
-          onClick={() => navigate(buildRoute(ROUTES.AIRCRAFT_EDIT, { id: aircraft.id }))}
-        >
-          Editar
-        </Button>
+        <RoleGuard permission="canManageAircraft">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Pencil size={14} />}
+            onClick={() => navigate(buildRoute(ROUTES.AIRCRAFT_EDIT, { id: aircraft.id }))}
+          >
+            Editar
+          </Button>
+        </RoleGuard>
       </div>
 
       {/* Alertas de vencimiento */}
@@ -419,14 +422,16 @@ export function AircraftDetailPage(): JSX.Element {
                   ))}
                 </ul>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 w-full"
-                onClick={() => setIsDocumentModalOpen(true)}
-              >
-                Subir documento
-              </Button>
+              <RoleGuard permission="canManageAircraft">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={() => setIsDocumentModalOpen(true)}
+                >
+                  Subir documento
+                </Button>
+              </RoleGuard>
             </CardBody>
           </Card>
         </div>

@@ -1,3 +1,5 @@
+import type { InspectionStatus } from './inspection.types';
+
 export type WorkOrderStatus =
   | 'Pendiente'
   | 'EnProceso'
@@ -110,6 +112,18 @@ export interface WorkOrderDetail extends WorkOrder {
   materials: WorkOrderMaterial[];
   documents: WorkOrderDocument[];
   assignedMechanics: AssignedMechanic[];
+  inspections: WorkOrderInspection[];
+}
+
+/** Inspeccion de una OT dentro de su detalle */
+export interface WorkOrderInspection {
+  id: string;
+  type: string;
+  status: InspectionStatus;
+  scheduledDate: string;
+  completedAt?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface WorkOrderFilters {

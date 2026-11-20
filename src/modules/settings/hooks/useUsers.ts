@@ -78,3 +78,25 @@ export function useSetUserActive() {
     },
   });
 }
+
+// Contraseña nueva asignada por el gerente; resuelve la notificacion de solicitud
+export function useResetUserPassword() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      usersService.resetPassword(id, newPassword),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      addToast({
+        type: 'success',
+        title: 'Contraseña asignada',
+        description: 'Comunicale la contraseña nueva al usuario. Sus sesiones abiertas se cerraron.',
+      });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al asignar la contraseña', description: err.message });
+    },
+  });
+}

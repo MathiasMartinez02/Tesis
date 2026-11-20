@@ -1,23 +1,16 @@
 import type { ReactNode } from 'react';
 import { useAuthStore, selectUserPermissions } from '@/store/authStore';
-import type { UserPermissions } from '@/types';
+import { hasPermission, type PermissionRequirement } from '@/lib/permissions';
 
 interface RoleGuardProps {
-  permission: keyof UserPermissions;
+  permission: PermissionRequirement;
   fallback?: ReactNode;
   children: ReactNode;
 }
 
-/**
- * Muestra children solo si el usuario tiene el permiso requerido.
- * Renderiza fallback (o null) si no tiene el permiso.
- */
+// Muestra children solo si el usuario tiene el permiso (o alguno de la lista)
 export function RoleGuard({ permission, fallback = null, children }: RoleGuardProps): JSX.Element {
   const permissions = useAuthStore(selectUserPermissions);
 
-  if (!permissions?.[permission]) {
-    return <>{fallback}</>;
-  }
-
-  return <>{children}</>;
+  return <>{hasPermission(permissions, permission) ? children : fallback}</>;
 }

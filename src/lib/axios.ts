@@ -1,6 +1,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { ENV } from '@/config/env';
-import type { ApiResponse } from '@/types';
+import { useAuthStore } from '@/store/authStore';
+import { toApiError } from './apiError';
+import { refreshAccessToken } from './sessionRefresh';
 
 const BASE_URL = ENV.API_BASE_URL;
 
@@ -32,7 +34,6 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // No interceptar 401 del propio endpoint de login (evita redirect/loop)
     if (
       error.response?.status === 401 &&
       originalRequest &&
@@ -42,18 +43,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('sigma_refresh_token');
-        if (!refreshToken) throw new Error('No refresh token');
-
-        const { data } = await axios.post<ApiResponse<{ accessToken: string }>>(
-          `${BASE_URL}/auth/refresh`,
-          { refreshToken }
-        );
-
-        if (!data.success || !data.data?.accessToken) throw new Error('Refresh failed');
-
-        const newAccessToken = data.data.accessToken;
-        localStorage.setItem(ENV.JWT_STORAGE_KEY, newAccessToken);
+        const newAccessToken = await refreshAccessToken();
 
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -61,13 +51,12 @@ apiClient.interceptors.response.use(
 
         return apiClient(originalRequest);
       } catch {
-        localStorage.removeItem(ENV.JWT_STORAGE_KEY);
-        localStorage.removeItem('sigma_refresh_token');
+        useAuthStore.getState().logout();
         window.location.href = '/login';
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(toApiError(error));
   }
 );
 

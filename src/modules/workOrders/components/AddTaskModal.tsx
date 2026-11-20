@@ -1,21 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { addTaskSchema, type AddTaskFormData } from '../schemas/workOrder.schema';
 import { ListPlus } from 'lucide-react';
 import { Modal } from '@/shared/components/Modal/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { useAddWorkOrderTask } from '../hooks/useWorkOrders';
-
-// Esquema de validacion del alta de tarea: titulo/descripcion obligatorios, horas estimadas > 0
-const addTaskSchema = z.object({
-  title: z.string().min(1, 'Título requerido'),
-  description: z.string().min(1, 'Descripción requerida'),
-  estimatedHours: z.coerce.number().positive('Debe ser mayor a cero'),
-  requiresInspection: z.boolean().default(false),
-});
-
-type AddTaskFormData = z.infer<typeof addTaskSchema>;
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -55,7 +45,7 @@ export function AddTaskModal({ isOpen, onClose, workOrderId }: AddTaskModalProps
       isOpen={isOpen}
       onClose={onClose}
       title="Agregar Tarea"
-      description="Agregá una tarea nueva a esta orden de trabajo"
+      description="Agregá una tarea a esta orden de trabajo"
       footer={
         <>
           <Button variant="outline" onClick={onClose}>

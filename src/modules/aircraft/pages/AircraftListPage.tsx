@@ -13,6 +13,7 @@ import { useAircraft } from '../hooks/useAircraft';
 import { buildRoute, ROUTES } from '@/constants';
 import { formatDate, formatFlightHours, daysUntil, cn } from '@/lib/utils';
 import type { Aircraft, AircraftFilters } from '@/types';
+import { RoleGuard } from '@/routes/RoleGuard';
 
 const CATEGORY_LABELS = {
   Avion: 'Avión',
@@ -125,17 +126,19 @@ function AircraftCard({
 
       {/* Acciones: editar y ver historial de mantenimiento (navegan sin disparar el onClick de la tarjeta) */}
       <div className="mt-3 flex gap-2 border-t border-surface-100 pt-3 dark:border-surface-700">
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<Pencil size={13} />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-        >
-          Editar
-        </Button>
+        <RoleGuard permission="canManageAircraft">
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<Pencil size={13} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            Editar
+          </Button>
+        </RoleGuard>
         <Button
           variant="ghost"
           size="sm"
@@ -178,9 +181,11 @@ export function AircraftListPage(): JSX.Element {
         title="Aeronaves"
         description={`${data?.total ?? 0} aeronaves registradas`}
         actions={
-          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.AIRCRAFT_NEW)}>
-            Nueva Aeronave
-          </Button>
+          <RoleGuard permission="canManageAircraft">
+            <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.AIRCRAFT_NEW)}>
+              Registrar Aeronave
+            </Button>
+          </RoleGuard>
         }
       />
 

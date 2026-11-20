@@ -20,89 +20,37 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   Administracion: 'bg-pink-100 text-pink-800',
 };
 
+export const PERMISSION_KEYS: (keyof UserPermissions)[] = [
+  'canViewDashboard',
+  'canManageWorkOrders',
+  'canApproveInspections',
+  'canManageInventory',
+  'canManageUsers',
+  'canViewReports',
+  'canManageAircraft',
+  'canManageClients',
+  'canSignDocuments',
+];
+
+// Objeto de permisos a partir de la lista del backend
+export function buildPermissions(granted: string[]): UserPermissions {
+  const set = new Set(granted);
+  return Object.fromEntries(PERMISSION_KEYS.map((key) => [key, set.has(key)])) as unknown as UserPermissions;
+}
+
 export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
-  // Acceso total al sistema
-  Gerente: {
-    canViewDashboard: true,
-    canManageWorkOrders: true,
-    canApproveInspections: true,
-    canManageInventory: true,
-    canManageUsers: true,
-    canViewReports: true,
-    canManageAircraft: true,
-    canManageClients: true,
-    canSignDocuments: true,
-  },
-  // Planificación técnica: OTs, aeronaves, clientes, reportes
-  OficinaTecnica: {
-    canViewDashboard: true,
-    canManageWorkOrders: true,
-    canApproveInspections: false,
-    canManageInventory: false,
-    canManageUsers: false,
-    canViewReports: true,
-    canManageAircraft: true,
-    canManageClients: true,
-    canSignDocuments: true,
-  },
-  // Dominio de inspecciones: aprueba, firma y ve OTs y aeronaves como contexto
-  Inspector: {
-    canViewDashboard: true,
-    canManageWorkOrders: true,
-    canApproveInspections: true,
-    canManageInventory: false,
-    canManageUsers: false,
-    canViewReports: true,
-    canManageAircraft: true,
-    canManageClients: false,
-    canSignDocuments: true,
-  },
-  // Dominio del taller: OTs, inventario, aeronaves y reportes operativos
-  JefeTaller: {
-    canViewDashboard: true,
-    canManageWorkOrders: true,
-    canApproveInspections: false,
-    canManageInventory: true,
-    canManageUsers: false,
-    canViewReports: true,
-    canManageAircraft: true,
-    canManageClients: false,
-    canSignDocuments: false,
-  },
-  // Ejecuta tareas en el taller: ve y actualiza sus OTs asignadas
-  Mecanico: {
-    canViewDashboard: true,
-    canManageWorkOrders: true,
-    canApproveInspections: false,
-    canManageInventory: false,
-    canManageUsers: false,
-    canViewReports: false,
-    canManageAircraft: false,
-    canManageClients: false,
-    canSignDocuments: false,
-  },
-  // Dominio del pañol: inventario y sus reportes
-  Panol: {
-    canViewDashboard: true,
-    canManageWorkOrders: false,
-    canApproveInspections: false,
-    canManageInventory: true,
-    canManageUsers: false,
-    canViewReports: true,
-    canManageAircraft: false,
-    canManageClients: false,
-    canSignDocuments: false,
-  },
-  // Administración: usuarios, clientes y reportes (sin acceso operativo)
-  Administracion: {
-    canViewDashboard: true,
-    canManageWorkOrders: false,
-    canApproveInspections: false,
-    canManageInventory: false,
-    canManageUsers: true,
-    canViewReports: true,
-    canManageAircraft: false,
-    canManageClients: true,
-    canSignDocuments: false,
-  },
+  Gerente: buildPermissions([
+    'canViewDashboard', 'canManageWorkOrders', 'canApproveInspections',
+    'canViewReports', 'canManageAircraft', 'canManageClients',
+    'canManageInventory', 'canManageUsers', 'canSignDocuments',
+  ]),
+  OficinaTecnica: buildPermissions([
+    'canViewDashboard', 'canManageWorkOrders', 'canViewReports',
+    'canManageAircraft', 'canManageClients',
+  ]),
+  Inspector: buildPermissions(['canViewDashboard', 'canApproveInspections', 'canViewReports', 'canSignDocuments']),
+  JefeTaller: buildPermissions(['canViewDashboard', 'canManageWorkOrders', 'canManageInventory', 'canViewReports']),
+  Mecanico: buildPermissions(['canViewDashboard']),
+  Panol: buildPermissions(['canViewDashboard', 'canManageInventory']),
+  Administracion: buildPermissions(['canViewDashboard', 'canViewReports', 'canManageClients']),
 };

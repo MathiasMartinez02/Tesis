@@ -1,21 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { addMaterialSchema, type AddMaterialFormData } from '../schemas/workOrder.schema';
 import { PackagePlus } from 'lucide-react';
 import { Modal } from '@/shared/components/Modal/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { useAddWorkOrderMaterial } from '../hooks/useWorkOrders';
-
-// Esquema de validacion del alta de material: numero de parte/descripcion/unidad obligatorios, cantidad > 0
-const addMaterialSchema = z.object({
-  partNumber: z.string().min(1, 'Número de parte requerido'),
-  description: z.string().min(1, 'Descripción requerida'),
-  quantity: z.coerce.number().positive('Debe ser mayor a cero'),
-  unit: z.string().min(1, 'Unidad requerida'),
-});
-
-type AddMaterialFormData = z.infer<typeof addMaterialSchema>;
 
 interface AddMaterialModalProps {
   isOpen: boolean;

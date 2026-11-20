@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { movementSchema, type MovementFormData } from '../schemas/inventoryMovement.schema';
 import { ArrowRightLeft } from 'lucide-react';
 import { Modal } from '@/shared/components/Modal/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -17,16 +17,6 @@ const ACTIVE_WORK_ORDER_STATUSES = new Set(['Pendiente', 'EnProceso', 'EnInspecc
 const MOVEMENT_TYPE_OPTIONS: SelectOption[] = Object.entries(MOVEMENT_TYPE_LABELS).map(
   ([value, label]) => ({ value, label })
 );
-
-// Esquema del formulario de registro de movimiento: tipo, cantidad, motivo y OT asociada (opcional, solo aplica a Salida)
-const movementSchema = z.object({
-  type: z.enum(['Entrada', 'Salida', 'Reserva', 'Devolucion', 'Ajuste']),
-  quantity: z.number().min(1, 'Debe ser mayor a 0'),
-  reason: z.string().min(3, 'Mínimo 3 caracteres'),
-  workOrderId: z.string().optional(),
-});
-
-type MovementFormData = z.infer<typeof movementSchema>;
 
 interface AddInventoryMovementModalProps {
   isOpen: boolean;
@@ -69,7 +59,7 @@ export function AddInventoryMovementModal({
           type: data.type as MovementType,
           quantity: data.quantity,
           reason: data.reason,
-          workOrderId: data.type === 'Salida' ? data.workOrderId || undefined : undefined,
+          workOrderId: data.type === 'Salida' ? data.workOrderId : undefined,
         },
       },
       {

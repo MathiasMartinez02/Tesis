@@ -9,7 +9,9 @@ interface Breadcrumb {
 const ROUTE_LABELS: Record<string, string> = {
   '': 'Dashboard',
   'ordenes-de-trabajo': 'Órdenes de Trabajo',
-  nueva: 'Nueva',
+  nueva: 'Registrar',
+  nuevo: 'Registrar',
+  'turnos': 'Turnos',
   'aeronaves': 'Aeronaves',
   'clientes': 'Clientes',
   'inspecciones': 'Inspecciones',

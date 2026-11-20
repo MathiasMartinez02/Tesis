@@ -9,6 +9,7 @@ import { ROLE_LABELS, ROUTES } from '@/constants';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { useUnreadNotificationsCount } from '@/modules/notifications/hooks/useNotifications';
 import { NotificationsPanel } from '@/modules/notifications/components/NotificationsPanel';
+import { useLogout } from '@/modules/auth/hooks/useLogout';
 import { GlobalSearchPanel } from './GlobalSearchPanel';
 
 // MODIFICADO (Fase 8): el boton de busqueda ahora abre GlobalSearchPanel (antes solo togleaba un estado sin
@@ -24,13 +25,8 @@ export function Navbar(): JSX.Element {
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
   const user = useAuthStore(selectUser);
-  const logout = useAuthStore((s) => s.logout);
+  const handleLogout = useLogout();
   const breadcrumbs = useBreadcrumbs();
-
-  const handleLogout = (): void => {
-    logout();
-    navigate(ROUTES.LOGIN);
-  };
 
   const toggleTheme = (): void => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -191,7 +187,7 @@ export function Navbar(): JSX.Element {
                       Mi Perfil
                     </button>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => void handleLogout()}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       <LogOut size={14} />

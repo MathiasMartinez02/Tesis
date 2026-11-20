@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { aircraftSchema, type AircraftFormData } from '../schemas/aircraft.schema';
 import { ArrowLeft, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -13,28 +13,6 @@ import { ROUTES, buildRoute } from '@/constants';
 import type { SelectOption } from '@/types';
 import { useCreateAircraft } from '../hooks/useAircraft';
 import { useClients } from '@/modules/clients/hooks/useClients';
-
-const aircraftSchema = z.object({
-  registration: z
-    .string()
-    .min(1, 'Requerido')
-    .regex(/^LV-[A-Z]{3}$/, 'Formato: LV-XXX (ej. LV-ABC)'),
-  manufacturer: z.string().min(1, 'Requerido'),
-  model: z.string().min(1, 'Requerido'),
-  year: z.number().min(1900).max(new Date().getFullYear()),
-  category: z.enum(['Avion', 'Helicoptero', 'Planeador', 'Ultraliviano']),
-  serialNumber: z.string().min(1, 'Requerido'),
-  engineModel: z.string().min(1, 'Requerido'),
-  engineSerialNumber: z.string().min(1, 'Requerido'),
-  clientId: z.string().min(1, 'Seleccionar cliente'),
-  totalFlightHours: z.number().min(0),
-  totalLandings: z.number().min(0),
-  nextInspectionDue: z.string().min(1, 'Requerido'),
-  nextInspectionHours: z.number().min(0),
-  certificateExpiry: z.string().min(1, 'Requerido'),
-});
-
-type AircraftFormData = z.infer<typeof aircraftSchema>;
 
 const CATEGORY_OPTIONS: SelectOption[] = [
   { value: 'Avion', label: 'Avión' },
@@ -84,8 +62,8 @@ export function AircraftNewPage(): JSX.Element {
       className="max-w-3xl"
     >
       <PageHeader
-        title="Nueva Aeronave"
-        description="Registrá una nueva aeronave en el sistema"
+        title="Registrar Aeronave"
+        description="Registrá una aeronave en el sistema"
         actions={
           <Button
             variant="ghost"

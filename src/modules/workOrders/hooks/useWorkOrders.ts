@@ -11,6 +11,7 @@ import type {
   CreateWorkOrderMaterialPayload,
 } from '@/types';
 import { useUIStore } from '@/store/uiStore';
+import { invalidateMaintenanceQueries } from '@/lib/maintenanceQueries';
 
 export const WORK_ORDERS_QUERY_KEY = ['work-orders'] as const;
 
@@ -70,13 +71,14 @@ type UpdateFullPayload = {
   newMechanics: AssignedMechanic[];
 };
 
+// Edicion de OT con alta y baja de mecanicos asignados
 export function useUpdateWorkOrderFull() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);
 
   return useMutation({
     mutationFn: async ({ id, payload, originalMechanicIds, newMechanics }: UpdateFullPayload) => {
-      const updated = await workOrdersService.update(id, payload);
+      await workOrdersService.update(id, payload);
 
       const originalSet = new Set(originalMechanicIds);
       const newSet = new Set(newMechanics.map((m) => m.userId));
@@ -87,24 +89,20 @@ export function useUpdateWorkOrderFull() {
         ...toAdd.map((m) => workOrdersService.addMechanic(id, m.userId)),
         ...toRemove.map((uid) => workOrdersService.removeMechanic(id, uid)),
       ]);
-
-      return updated;
     },
-    onSuccess: (updatedOrder) => {
-      void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
+    onSuccess: () => {
       addToast({
         type: 'success',
         title: 'OT actualizada',
-        description: `${updatedOrder.number} guardada correctamente`,
+        description: 'Los cambios se guardaron correctamente',
         duration: 3000,
       });
     },
-    onError: () => {
-      addToast({
-        type: 'error',
-        title: 'Error al guardar',
-        description: 'No se pudieron guardar los cambios',
-      });
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al guardar', description: err.message });
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
     },
   });
 }
@@ -127,6 +125,7 @@ export function useUpdateWorkOrder() {
   });
 }
 
+// Cambio de estado de OT; refresca OT, inspecciones, aeronaves y dashboard
 export function useUpdateWorkOrderStatus() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);
@@ -134,9 +133,8 @@ export function useUpdateWorkOrderStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: WorkOrder['status'] }) =>
       workOrdersService.updateStatus(id, status),
-    onSuccess: (_, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, id] });
+    onSuccess: () => {
+      invalidateMaintenanceQueries(queryClient);
       addToast({ type: 'success', title: 'Estado actualizado' });
     },
     onError: (err: Error) => {

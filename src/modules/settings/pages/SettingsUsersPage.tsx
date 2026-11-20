@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit, Power } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Power, KeyRound } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
@@ -11,17 +11,16 @@ import { RoleGuard } from '@/routes/RoleGuard';
 import { ROLE_LABELS, ROLE_COLORS, ROUTES } from '@/constants';
 import { useUsers, useSetUserActive } from '../hooks/useUsers';
 import { UserFormModal } from '../components/UserFormModal';
+import { ResetUserPasswordModal } from '../components/ResetUserPasswordModal';
 import type { User, UserRole } from '@/types';
 
-// Pagina de gestion de usuarios (antes solo existia la ruta /configuracion/usuarios sin componente montado).
-// Reutiliza usersService/useUsers ya existentes (los 14 errores de TS del modulo, documentados desde la Fase 0, se resolvieron
-// agregando getById/create/update/setActive a users.service.ts). Alta/edicion y activar-desactivar quedan detras de RoleGuard(canManageUsers),
-// igual permiso que exige el backend en UsersController ([Authorize(Policy = "CanManageUsers")]).
+// Gestion de usuarios: alta, edicion, activacion y contraseña asignada por el gerente
 export function SettingsUsersPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [passwordUser, setPasswordUser] = useState<User | null>(null);
 
   const { data: result, isLoading } = useUsers({ search: search || undefined }, 1, 100);
   const { mutate: setActive, isPending: isTogglingActive } = useSetUserActive();
@@ -65,7 +64,7 @@ export function SettingsUsersPage(): JSX.Element {
         />
         <RoleGuard permission="canManageUsers">
           <Button leftIcon={<Plus size={15} />} onClick={openCreateModal}>
-            Nuevo Usuario
+            Registrar Usuario
           </Button>
         </RoleGuard>
       </div>
@@ -120,6 +119,14 @@ export function SettingsUsersPage(): JSX.Element {
                     <Button
                       variant="ghost"
                       size="icon-sm"
+                      aria-label={`Asignar contraseña a ${user.firstName} ${user.lastName}`}
+                      onClick={() => setPasswordUser(user)}
+                    >
+                      <KeyRound size={14} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       isLoading={isTogglingActive}
                       aria-label={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
                       onClick={() => setActive({ id: user.id, isActive: !user.isActive })}
@@ -135,6 +142,7 @@ export function SettingsUsersPage(): JSX.Element {
       </Card>
 
       <UserFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={editingUser} />
+      <ResetUserPasswordModal user={passwordUser} onClose={() => setPasswordUser(null)} />
     </motion.div>
   );
 }

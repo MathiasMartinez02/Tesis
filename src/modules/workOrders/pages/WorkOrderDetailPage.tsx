@@ -8,8 +8,8 @@ import {
   Calendar,
   Edit,
   ChevronDown,
-  CalendarCheck,
   Ban,
+  ClipboardCheck,
   ListPlus,
   PackagePlus,
   PackageCheck,
@@ -29,15 +29,11 @@ import {
   useUpdateTaskStatus,
   useUpdateMaterialStatus,
 } from '../hooks/useWorkOrders';
-import { ScheduleInspectionModal } from '../components/ScheduleInspectionModal';
 import { AddTaskModal } from '../components/AddTaskModal';
 import { AddMaterialModal } from '../components/AddMaterialModal';
-import { WORK_ORDER_TYPE_LABELS, ROUTES, buildRoute } from '@/constants';
+import { WORK_ORDER_TYPE_LABELS, ROUTES, buildRoute, getInspectionTypeLabel } from '@/constants';
 import { formatDate, formatDateTime, formatFlightHours } from '@/lib/utils';
 import type { WorkOrder, WorkOrderTaskStatus, WorkOrderMaterialStatus } from '@/types';
-
-// Estados de la OT en los que tiene sentido programar una inspección
-const INSPECTABLE_STATUSES: ReadonlyArray<WorkOrder['status']> = ['EnProceso', 'EnInspeccion'];
 
 // MODIFICADO: antes ocultaba "Cancelar OT" solo en Finalizada/Cancelada, pero el dominio (WorkOrder.ValidTransitions)
 // tampoco permite cancelar desde EnInspeccion — con la lista anterior el boton quedaba visible ahi y la transicion fallaba en el backend.
@@ -96,7 +92,6 @@ export function WorkOrderDetailPage(): JSX.Element {
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateWorkOrderStatus();
   const { mutate: updateTaskStatus } = useUpdateTaskStatus();
   const { mutate: updateMaterialStatus } = useUpdateMaterialStatus();
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
 
@@ -170,24 +165,16 @@ export function WorkOrderDetailPage(): JSX.Element {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Edit size={14} />}
-            onClick={() => navigate(buildRoute(ROUTES.WORK_ORDER_EDIT, { id: order.id }))}
-          >
-            Editar
-          </Button>
-          {INSPECTABLE_STATUSES.includes(order.status) && (
+          <RoleGuard permission="canManageWorkOrders">
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<CalendarCheck size={14} />}
-              onClick={() => setIsScheduleModalOpen(true)}
+              leftIcon={<Edit size={14} />}
+              onClick={() => navigate(buildRoute(ROUTES.WORK_ORDER_EDIT, { id: order.id }))}
             >
-              Programar Inspección
+              Editar
             </Button>
-          )}
+          </RoleGuard>
           {/* MODIFICADO: "Cancelar OT" y "Cambiar estado" ahora exigen canManageWorkOrders (mismo permiso que el backend valida en PATCH /work-orders/{id}/status), no solo estar autenticado */}
           {/* ANTERIOR: ambos controles eran visibles para cualquier usuario logueado, sin chequeo de permiso en el frontend */}
           <RoleGuard permission="canManageWorkOrders">
@@ -411,7 +398,44 @@ export function WorkOrderDetailPage(): JSX.Element {
             </CardBody>
           </Card>
 
-          {/* Timeline */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Inspecciones</CardTitle>
+            </CardHeader>
+            <CardBody>
+              {order.inspections.length === 0 ? (
+                <p className="text-sm text-surface-500">
+                  La inspección se genera automáticamente al pasar la OT a En Inspección.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {order.inspections.map((inspection) => (
+                    <button
+                      key={inspection.id}
+                      type="button"
+                      onClick={() => navigate(buildRoute(ROUTES.INSPECTION_DETAIL, { id: inspection.id }))}
+                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-surface-100 p-3 text-left hover:bg-surface-50 dark:border-surface-700 dark:hover:bg-surface-800"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ClipboardCheck size={16} className="text-aviation-600" />
+                        <div>
+                          <p className="text-sm font-medium text-surface-900 dark:text-white">
+                            {getInspectionTypeLabel(inspection.type)}
+                          </p>
+                          <p className="text-xs text-surface-500">
+                            {formatDate(inspection.scheduledDate)}
+                            {inspection.rejectionReason && ` · Rechazo: ${inspection.rejectionReason}`}
+                          </p>
+                        </div>
+                      </div>
+                      <StatusBadge type="inspection" status={inspection.status} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
           {order.timeline && order.timeline.length > 0 && (
             <Card>
               <CardHeader>
@@ -564,11 +588,6 @@ export function WorkOrderDetailPage(): JSX.Element {
         </div>
       </div>
 
-      <ScheduleInspectionModal
-        isOpen={isScheduleModalOpen}
-        onClose={() => setIsScheduleModalOpen(false)}
-        workOrderId={order.id}
-      />
       <AddTaskModal
         isOpen={isAddTaskModalOpen}
         onClose={() => setIsAddTaskModalOpen(false)}

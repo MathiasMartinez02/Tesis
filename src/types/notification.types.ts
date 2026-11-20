@@ -5,7 +5,8 @@ export type NotificationType =
   | 'DocumentoPorVencer'
   | 'StockBajo'
   | 'StockSobre'
-  | 'StockVencido';
+  | 'StockVencido'
+  | 'SolicitudCambioPassword';
 
 /** NotificationDto — lo que devuelve el listado (GET /notifications) */
 export interface Notification {

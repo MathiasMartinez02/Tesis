@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { workOrderSchema, type WorkOrderFormData } from '../schemas/workOrder.schema';
 import { ArrowLeft, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -13,23 +13,6 @@ import { ROUTES, WORK_ORDER_TYPE_LABELS, WORK_ORDER_PRIORITY_LABELS, buildRoute 
 import type { SelectOption } from '@/types';
 import { useCreateWorkOrder } from '../hooks/useWorkOrders';
 import { useAircraft } from '@/modules/aircraft/hooks/useAircraft';
-
-// MODIFICADO: agrega intakeDate (fecha de ingreso), requerida, para registrar cuándo entró la aeronave al taller
-// ANTERIOR: los valores del enum estaban en snake_case/minusculas y no coincidian con WorkOrderType/WorkOrderPriority reales (PascalCase), lo que impedia pasar "data" directamente a useCreateWorkOrder
-const workOrderSchema = z.object({
-  type: z.enum([
-    'Inspeccion50h', 'Inspeccion100h', 'Inspeccion200h',
-    'InspeccionAnual', 'Reparacion', 'Modificacion', 'AdCumplimiento', 'Servicio'
-  ]),
-  priority: z.enum(['Baja', 'Media', 'Alta', 'Critica']),
-  aircraftId: z.string().min(1, 'Seleccionar aeronave'),
-  description: z.string().min(10, 'Mínimo 10 caracteres'),
-  estimatedHours: z.number().min(0.5, 'Mínimo 0.5 horas').max(999),
-  intakeDate: z.string().min(1, 'Fecha requerida'),
-  estimatedEndDate: z.string().min(1, 'Fecha requerida'),
-});
-
-type WorkOrderFormData = z.infer<typeof workOrderSchema>;
 
 const TYPE_OPTIONS: SelectOption[] = Object.entries(WORK_ORDER_TYPE_LABELS).map(
   ([value, label]) => ({ value, label })
@@ -78,8 +61,8 @@ export function WorkOrderNewPage(): JSX.Element {
       className="max-w-3xl"
     >
       <PageHeader
-        title="Nueva Orden de Trabajo"
-        description="Completá los datos para crear una nueva OT"
+        title="Registrar Orden de Trabajo"
+        description="Completá los datos para registrar una OT"
         actions={
           <Button
             variant="ghost"

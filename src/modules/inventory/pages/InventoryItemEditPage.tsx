@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { toDateInput } from '@/lib/utils';
+import { inventoryItemEditSchema, type InventoryItemEditFormData } from '../schemas/inventoryItem.schema';
 import { ArrowLeft, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -13,29 +14,6 @@ import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { ROUTES, buildRoute, INVENTORY_CATEGORY_LABELS } from '@/constants';
 import { useInventoryItem, useUpdateInventoryItem } from '@/modules/inventory/hooks/useInventory';
-
-// MODIFICADO: se agrega el campo opcional maximumStock, con validacion de que si se informa debe ser mayor a minimumStock
-// ANTERIOR: solo incluia description, location, minimumStock, unitCost, certificateNumber, expiryDate
-const editSchema = z
-  .object({
-    description: z.string().min(5, 'Mínimo 5 caracteres'),
-    location: z.string().min(1, 'Requerido'),
-    minimumStock: z.number().min(0),
-    // El input numerico vacio llega como NaN via valueAsNumber; se normaliza a undefined antes de validar
-    maximumStock: z.preprocess(
-      (val) => (typeof val === 'number' && Number.isNaN(val) ? undefined : val),
-      z.number().min(0).optional()
-    ),
-    unitCost: z.number().min(0),
-    certificateNumber: z.string().optional(),
-    expiryDate: z.string().optional(),
-  })
-  .refine(
-    (data) => data.maximumStock === undefined || data.maximumStock > data.minimumStock,
-    { message: 'El stock máximo debe ser mayor al stock mínimo', path: ['maximumStock'] }
-  );
-
-type EditFormData = z.infer<typeof editSchema>;
 
 // Página de edición de un ítem de inventario: precarga los datos con useInventoryItem y guarda con useUpdateInventoryItem
 export function InventoryItemEditPage(): JSX.Element {
@@ -49,8 +27,8 @@ export function InventoryItemEditPage(): JSX.Element {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<EditFormData>({
-    resolver: zodResolver(editSchema),
+  } = useForm<InventoryItemEditFormData>({
+    resolver: zodResolver(inventoryItemEditSchema),
   });
 
   // MODIFICADO: incluye maximumStock al precargar el formulario con los datos del item
@@ -64,7 +42,7 @@ export function InventoryItemEditPage(): JSX.Element {
         maximumStock: item.maximumStock,
         unitCost: item.unitCost,
         certificateNumber: item.certificateNumber ?? '',
-        expiryDate: item.expiryDate ? item.expiryDate.split('T')[0] : '',
+        expiryDate: toDateInput(item.expiryDate),
       });
     }
   }, [item, reset]);
@@ -76,7 +54,7 @@ export function InventoryItemEditPage(): JSX.Element {
 
   const detailRoute = buildRoute(ROUTES.INVENTORY_ITEM_DETAIL, { id: item.id });
 
-  const onSubmit = (data: EditFormData): void => {
+  const onSubmit = (data: InventoryItemEditFormData): void => {
     updateItem(
       { id: item.id, payload: data },
       { onSuccess: () => navigate(detailRoute) }

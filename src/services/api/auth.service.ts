@@ -6,23 +6,18 @@ import type {
 } from '@/types';
 import { MOCK_USERS } from '@/mocks/users.mock';
 import { ENV } from '@/config/env';
+import { buildPermissions } from '@/constants/roles';
 import apiClient from '@/lib/axios';
 import type { ApiResponse } from '@/types';
 
-/** Convierte el array de policies del backend al objeto UserPermissions del frontend */
-function mapPermissions(permissions: string[]): UserPermissions {
-  const set = new Set(permissions);
-  return {
-    canViewDashboard: set.has('CanViewDashboard'),
-    canManageWorkOrders: set.has('CanManageWorkOrders'),
-    canApproveInspections: set.has('CanApproveInspections'),
-    canManageInventory: set.has('CanManageInventory'),
-    canManageUsers: set.has('CanManageUsers'),
-    canViewReports: set.has('CanViewReports'),
-    canManageAircraft: set.has('CanManageAircraft'),
-    canManageClients: set.has('CanManageClients'),
-    canSignDocuments: set.has('CanSignDocuments'),
-  };
+export interface RefreshResult {
+  accessToken: string;
+  refreshToken: string;
+}
+
+// Permisos del login (camelCase, igual que User.GetPermissions)
+export function mapPermissions(permissions: string[]): UserPermissions {
+  return buildPermissions(permissions);
 }
 
 async function mockLogin(credentials: LoginCredentials): Promise<LoginResponse> {
@@ -83,11 +78,12 @@ export const authService = {
     await apiClient.post('/auth/logout');
   },
 
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+  // Renueva la sesion; el backend rota el refresh token
+  async refreshToken(refreshToken: string): Promise<RefreshResult> {
     if (ENV.ENABLE_MOCK_API) {
-      return { accessToken: `mock-refreshed-${Date.now()}` };
+      return { accessToken: `mock-refreshed-${Date.now()}`, refreshToken };
     }
-    const { data } = await apiClient.post<ApiResponse<{ accessToken: string }>>(
+    const { data } = await apiClient.post<ApiResponse<RefreshResult>>(
       '/auth/refresh',
       { refreshToken }
     );
@@ -108,31 +104,13 @@ export const authService = {
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al cambiar la contraseña');
   },
 
-  // Paso 1 de "olvidé mi contraseña": genera un token de un solo uso. MVP sin envio de email real
-  // (no hay infraestructura de correo en el proyecto): el token se devuelve en la respuesta.
-  async forgotPassword(email: string): Promise<{ resetToken: string; expiresAt: string }> {
-    if (ENV.ENABLE_MOCK_API) {
-      await new Promise((r) => setTimeout(r, 400));
-      return { resetToken: `mock-reset-${Date.now()}`, expiresAt: new Date(Date.now() + 3600_000).toISOString() };
-    }
-    const { data } = await apiClient.post<ApiResponse<{ resetToken: string; expiresAt: string }>>(
-      '/auth/forgot-password',
-      { email }
-    );
-    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'No se pudo generar el token de reseteo');
-    return data.data;
-  },
-
-  // Paso 2: aplica la nueva contraseña usando el token generado en el paso 1
-  async resetPassword(token: string, newPassword: string): Promise<void> {
+  // Solicitud de cambio de contraseña (avisa al gerente)
+  async forgotPassword(email: string): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));
       return;
     }
-    const { data } = await apiClient.post<ApiResponse<null>>('/auth/reset-password', {
-      token,
-      newPassword,
-    });
-    if (!data.success) throw new Error(data.errors?.[0] ?? 'Token inválido o expirado');
+    const { data } = await apiClient.post<ApiResponse<null>>('/auth/forgot-password', { email });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'No se pudo enviar la solicitud');
   },
 };

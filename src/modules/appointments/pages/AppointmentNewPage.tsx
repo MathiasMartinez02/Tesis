@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { appointmentSchema, type AppointmentFormData } from '../schemas/appointment.schema';
 import { ArrowLeft, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -14,37 +14,6 @@ import type { CreateAppointmentPayload, SelectOption } from '@/types';
 import { useCreateAppointment } from '../hooks/useAppointments';
 import { useClients } from '@/modules/clients/hooks/useClients';
 import { useAircraft } from '@/modules/aircraft/hooks/useAircraft';
-
-// Esquema de validacion del formulario, con reglas condicionales segun si la aeronave ya esta registrada
-const appointmentSchema = z
-  .object({
-    clientId: z.string().min(1, 'Seleccionar cliente'),
-    useRegisteredAircraft: z.boolean(),
-    aircraftId: z.string().optional(),
-    aircraftRegistrationHint: z.string().optional(),
-    requestedType: z.enum([
-      'Inspeccion50h',
-      'Inspeccion100h',
-      'Inspeccion200h',
-      'InspeccionAnual',
-      'Reparacion',
-      'Modificacion',
-      'AdCumplimiento',
-      'Servicio',
-    ]),
-    scheduledDate: z.string().min(1, 'Fecha requerida'),
-    notes: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.useRegisteredAircraft && !data.aircraftId) {
-      ctx.addIssue({ code: 'custom', path: ['aircraftId'], message: 'Seleccionar aeronave' });
-    }
-    if (!data.useRegisteredAircraft && !data.aircraftRegistrationHint?.trim()) {
-      ctx.addIssue({ code: 'custom', path: ['aircraftRegistrationHint'], message: 'Matrícula requerida' });
-    }
-  });
-
-type AppointmentFormData = z.infer<typeof appointmentSchema>;
 
 const TYPE_OPTIONS: SelectOption[] = Object.entries(WORK_ORDER_TYPE_LABELS).map(([value, label]) => ({
   value,
@@ -111,7 +80,7 @@ export function AppointmentNewPage(): JSX.Element {
       className="max-w-3xl"
     >
       <PageHeader
-        title="Nuevo Turno"
+        title="Registrar Turno"
         description="Registrá el pedido de turno del cliente"
         actions={
           <Button

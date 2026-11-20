@@ -95,6 +95,7 @@ export const workOrdersService = {
         materials: MOCK_MATERIALS_BY_ORDER[id] ?? [],
         documents: [],
         assignedMechanics: [],
+        inspections: [],
       };
     }
 
@@ -146,31 +147,29 @@ export const workOrdersService = {
       estimatedEndDate: string;
       priority: WorkOrderPriority;
     }
-  ): Promise<WorkOrder> {
+  ): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 600));
       const order = MOCK_WORK_ORDERS.find((o) => o.id === id);
       if (!order) throw new Error('OT no encontrada');
       Object.assign(order, payload, { updatedAt: new Date().toISOString() });
-      return order;
+      return;
     }
-    const { data } = await apiClient.put<ApiResponse<WorkOrder>>(`/work-orders/${id}`, payload);
-    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al actualizar OT');
-    return data.data;
+    const { data } = await apiClient.put<ApiResponse<null>>(`/work-orders/${id}`, payload);
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar OT');
   },
 
-  async updateStatus(id: string, status: WorkOrder['status']): Promise<WorkOrder> {
+  async updateStatus(id: string, status: WorkOrder['status']): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 300));
       const order = MOCK_WORK_ORDERS.find((o) => o.id === id);
       if (!order) throw new Error('OT no encontrada');
       order.status = status;
       order.updatedAt = new Date().toISOString();
-      return order;
+      return;
     }
-    const { data } = await apiClient.patch<ApiResponse<WorkOrder>>(`/work-orders/${id}/status`, { status });
-    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Transición de estado inválida');
-    return data.data;
+    const { data } = await apiClient.patch<ApiResponse<null>>(`/work-orders/${id}/status`, { status });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Transición de estado inválida');
   },
 
   async addMechanic(workOrderId: string, userId: string): Promise<void> {

@@ -143,9 +143,11 @@ export function InventoryListPage(): JSX.Element {
         title="Pañol / Inventario"
         description={`${result?.total ?? 0} ítems en el pañol`}
         actions={
-          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.INVENTORY_ITEM_NEW)}>
-            Nuevo ítem
-          </Button>
+          <RoleGuard permission="canManageInventory">
+            <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.INVENTORY_ITEM_NEW)}>
+              Registrar ítem
+            </Button>
+          </RoleGuard>
         }
       />
 

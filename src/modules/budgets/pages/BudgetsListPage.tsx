@@ -145,7 +145,7 @@ export function BudgetsListPage(): JSX.Element {
         actions={
           <RoleGuard permission="canManageClients">
             <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setIsModalOpen(true)}>
-              Nuevo Presupuesto
+              Registrar Presupuesto
             </Button>
           </RoleGuard>
         }
@@ -167,7 +167,7 @@ export function BudgetsListPage(): JSX.Element {
         columns={columns}
         isLoading={isLoading}
         emptyMessage="No hay presupuestos"
-        emptyDescription="Creá el primer presupuesto con el botón Nuevo Presupuesto."
+        emptyDescription="Creá el primer presupuesto con el botón Registrar Presupuesto."
         stickyHeader
       />
 

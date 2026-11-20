@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { clientSchema, type ClientFormData } from '../schemas/client.schema';
 import { ArrowLeft, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -13,23 +13,6 @@ import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { ROUTES, buildRoute } from '@/constants';
 import { useClient, useUpdateClient } from '@/modules/clients/hooks/useClients';
-
-const clientSchema = z.object({
-  name: z.string().min(2, 'Mínimo 2 caracteres'),
-  businessName: z.string().min(2, 'Mínimo 2 caracteres'),
-  taxId: z
-    .string()
-    .regex(/^\d{2}-\d{8}-\d$/, 'Formato CUIT: XX-XXXXXXXX-X'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(7, 'Teléfono inválido'),
-  address: z.string().min(5, 'Requerido'),
-  city: z.string().min(2, 'Requerido'),
-  province: z.string().min(2, 'Requerido'),
-  contactPerson: z.string().optional(),
-  contactPhone: z.string().optional(),
-});
-
-type ClientFormData = z.infer<typeof clientSchema>;
 
 // Pagina de edicion de cliente: precarga los datos existentes via useClient y guarda con useUpdateClient
 export function ClientEditPage(): JSX.Element {

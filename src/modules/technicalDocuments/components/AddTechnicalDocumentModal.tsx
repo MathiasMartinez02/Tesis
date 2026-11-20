@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { technicalDocumentSchema, type TechnicalDocumentFormData } from '../schemas/technicalDocument.schema';
 import { UploadCloud } from 'lucide-react';
 import { Modal } from '@/shared/components/Modal/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -15,18 +15,6 @@ const TYPE_OPTIONS: SelectOption[] = Object.entries(TECHNICAL_DOCUMENT_TYPE_LABE
   value,
   label,
 }));
-
-const documentSchema = z.object({
-  type: z.string().min(1, 'Requerido'),
-  title: z.string().min(1, 'Requerido'),
-  fileUrl: z.string().min(1, 'Requerido'),
-  referenceCode: z.string().optional(),
-  description: z.string().optional(),
-  issueDate: z.string().optional(),
-  expiryDate: z.string().optional(),
-});
-
-type DocumentFormData = z.infer<typeof documentSchema>;
 
 interface AddTechnicalDocumentModalProps {
   isOpen: boolean;
@@ -42,8 +30,8 @@ export function AddTechnicalDocumentModal({ isOpen, onClose }: AddTechnicalDocum
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<DocumentFormData>({
-    resolver: zodResolver(documentSchema),
+  } = useForm<TechnicalDocumentFormData>({
+    resolver: zodResolver(technicalDocumentSchema),
     defaultValues: {
       type: '',
       title: '',
@@ -63,15 +51,15 @@ export function AddTechnicalDocumentModal({ isOpen, onClose }: AddTechnicalDocum
   }, [isOpen, reset]);
 
   // Envía el documento nuevo mediante useCreateTechnicalDocument y cierra el modal si se guarda con éxito
-  const onSubmit = async (data: DocumentFormData): Promise<void> => {
+  const onSubmit = async (data: TechnicalDocumentFormData): Promise<void> => {
     await createDocument.mutateAsync({
       type: data.type as TechnicalDocumentType,
       title: data.title,
       fileUrl: data.fileUrl,
-      referenceCode: data.referenceCode || undefined,
-      description: data.description || undefined,
-      issueDate: data.issueDate || undefined,
-      expiryDate: data.expiryDate || undefined,
+      referenceCode: data.referenceCode,
+      description: data.description,
+      issueDate: data.issueDate,
+      expiryDate: data.expiryDate,
     });
     onClose();
   };

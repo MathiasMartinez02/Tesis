@@ -30,6 +30,7 @@ export interface CreateUserPayload {
   lastName: string;
   role: UserRole;
   licenseNumber?: string;
+  licenseExpiry?: string;
   phone?: string;
 }
 

@@ -139,4 +139,15 @@ export const usersService = {
     const { data } = await apiClient.patch<ApiResponse<null>>(`/users/${id}/status`, { isActive });
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar estado');
   },
+
+  // Contraseña nueva asignada por el gerente
+  async resetPassword(id: string, newPassword: string): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 300));
+      return;
+    }
+
+    const { data } = await apiClient.patch<ApiResponse<null>>(`/users/${id}/password`, { newPassword });
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al asignar la contraseña');
+  },
 };

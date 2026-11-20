@@ -5,6 +5,8 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { MainLayout } from '@/layouts/MainLayout';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
+import { PermissionRoute } from './PermissionRoute';
+import { APPOINTMENTS_MANAGE } from '@/lib/permissions';
 
 // ─── Lazy imports - Code Splitting por módulo ─────────────────────────────────
 
@@ -221,7 +223,7 @@ const router = createBrowserRouter([
             path: ROUTES.WORK_ORDER_NEW,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <WorkOrderNewPage />
+                <PermissionRoute permission={'canManageWorkOrders'}><WorkOrderNewPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -237,7 +239,7 @@ const router = createBrowserRouter([
             path: ROUTES.WORK_ORDER_EDIT,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <WorkOrderEditPage />
+                <PermissionRoute permission={'canManageWorkOrders'}><WorkOrderEditPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -253,7 +255,7 @@ const router = createBrowserRouter([
             path: ROUTES.AIRCRAFT_NEW,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <AircraftNewPage />
+                <PermissionRoute permission={'canManageAircraft'}><AircraftNewPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -269,7 +271,7 @@ const router = createBrowserRouter([
             path: ROUTES.AIRCRAFT_EDIT,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <AircraftEditPage />
+                <PermissionRoute permission={'canManageAircraft'}><AircraftEditPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -285,7 +287,7 @@ const router = createBrowserRouter([
             path: ROUTES.CLIENT_NEW,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <ClientNewPage />
+                <PermissionRoute permission={'canManageClients'}><ClientNewPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -301,7 +303,7 @@ const router = createBrowserRouter([
             path: ROUTES.CLIENT_EDIT,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <ClientEditPage />
+                <PermissionRoute permission={'canManageClients'}><ClientEditPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -333,7 +335,7 @@ const router = createBrowserRouter([
             path: ROUTES.APPOINTMENT_NEW,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <AppointmentNewPage />
+                <PermissionRoute permission={APPOINTMENTS_MANAGE}><AppointmentNewPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -357,7 +359,7 @@ const router = createBrowserRouter([
             path: ROUTES.INVENTORY_ITEM_NEW,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <InventoryItemNewPage />
+                <PermissionRoute permission={'canManageInventory'}><InventoryItemNewPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -373,7 +375,7 @@ const router = createBrowserRouter([
             path: ROUTES.INVENTORY_ITEM_EDIT,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <InventoryItemEditPage />
+                <PermissionRoute permission={'canManageInventory'}><InventoryItemEditPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -397,7 +399,7 @@ const router = createBrowserRouter([
             path: ROUTES.REPORTS,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <ReportsPage />
+                <PermissionRoute permission={'canViewReports'}><ReportsPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -413,7 +415,7 @@ const router = createBrowserRouter([
             path: ROUTES.SETTINGS_USERS,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <SettingsUsersPage />
+                <PermissionRoute permission={'canManageUsers'}><SettingsUsersPage /></PermissionRoute>
               </Suspense>
             ),
           },
@@ -421,7 +423,7 @@ const router = createBrowserRouter([
             path: ROUTES.SETTINGS_ROLES,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <SettingsRolesPage />
+                <PermissionRoute permission={'canManageUsers'}><SettingsRolesPage /></PermissionRoute>
               </Suspense>
             ),
           },
