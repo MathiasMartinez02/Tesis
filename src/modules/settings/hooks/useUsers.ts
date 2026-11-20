@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersService } from '@/services/api/users.service';
-import type { UserFilters, CreateUserPayload, UpdateUserPayload } from '@/types';
+import type { UserFilters, CreateUserPayload, UpdateUserPayload, UserRole } from '@/types';
 import { useUIStore } from '@/store/uiStore';
 
 export const USERS_QUERY_KEY = ['users'] as const;
@@ -98,5 +98,13 @@ export function useResetUserPassword() {
     onError: (err: Error) => {
       addToast({ type: 'error', title: 'Error al asignar la contraseña', description: err.message });
     },
+  });
+}
+
+// Usuarios activos por rol para combos de asignacion
+export function useUserLookup(roles: UserRole[] = []) {
+  return useQuery({
+    queryKey: [...USERS_QUERY_KEY, 'lookup', roles],
+    queryFn: () => usersService.lookup(roles),
   });
 }

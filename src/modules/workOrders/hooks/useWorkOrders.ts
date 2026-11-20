@@ -9,6 +9,7 @@ import type {
   AssignedMechanic,
   CreateWorkOrderPayload,
   CreateWorkOrderMaterialPayload,
+  CreateWorkOrderDocumentPayload,
 } from '@/types';
 import { useUIStore } from '@/store/uiStore';
 import { invalidateMaintenanceQueries } from '@/lib/maintenanceQueries';
@@ -175,14 +176,16 @@ export function useUpdateTaskStatus() {
       taskId,
       status,
       observations,
+      actualHours,
     }: {
       workOrderId: string;
       taskId: string;
       status: WorkOrderTaskStatus;
       observations?: string;
-    }) => workOrdersService.updateTaskStatus(workOrderId, taskId, status, observations),
-    onSuccess: (_, { workOrderId }) => {
-      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, workOrderId] });
+      actualHours?: number;
+    }) => workOrdersService.updateTaskStatus(workOrderId, taskId, status, observations, actualHours),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
       addToast({ type: 'success', title: 'Tarea actualizada' });
     },
     onError: (err: Error) => {
@@ -230,6 +233,41 @@ export function useUpdateMaterialStatus() {
     },
     onError: (err: Error) => {
       addToast({ type: 'error', title: 'Error al actualizar material', description: err.message });
+    },
+  });
+}
+
+// Asigna o quita el responsable de una tarea
+export function useAssignTask() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ workOrderId, taskId, userId }: { workOrderId: string; taskId: string; userId: string | null }) =>
+      workOrdersService.assignTask(workOrderId, taskId, userId),
+    onSuccess: (_, { workOrderId }) => {
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, workOrderId] });
+      addToast({ type: 'success', title: 'Responsable actualizado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al asignar la tarea', description: err.message });
+    },
+  });
+}
+
+// Adjunta un documento a la OT
+export function useAddWorkOrderDocument(workOrderId: string) {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: (payload: CreateWorkOrderDocumentPayload) => workOrdersService.addDocument(workOrderId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, workOrderId] });
+      addToast({ type: 'success', title: 'Documento adjuntado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al adjuntar el documento', description: err.message });
     },
   });
 }

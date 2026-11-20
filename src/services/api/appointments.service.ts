@@ -2,6 +2,7 @@ import type {
   Appointment,
   AppointmentFilters,
   CreateAppointmentPayload,
+  UpdateAppointmentPayload,
   AppointmentStatus,
   WorkOrder,
   ApiResponse,
@@ -38,6 +39,12 @@ export const appointmentsService = {
   },
 
   // Confirma o cancela un turno existente
+  // Reprograma el turno o le asocia la aeronave registrada
+  async update(id: string, payload: UpdateAppointmentPayload): Promise<void> {
+    const { data } = await apiClient.put<ApiResponse<null>>(`/appointments/${id}`, payload);
+    if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar el turno');
+  },
+
   async updateStatus(id: string, status: AppointmentStatus): Promise<void> {
     const { data } = await apiClient.patch<ApiResponse<null>>(`/appointments/${id}/status`, { status });
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar el estado del turno');

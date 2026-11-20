@@ -9,6 +9,8 @@ import type {
   WorkOrderMaterialStatus,
   CreateWorkOrderPayload,
   CreateWorkOrderMaterialPayload,
+  CreateWorkOrderDocumentPayload,
+  WorkOrderDocument,
   ApiResponse,
   PaginatedResult,
 } from '@/types';
@@ -96,6 +98,7 @@ export const workOrdersService = {
         documents: [],
         assignedMechanics: [],
         inspections: [],
+        allowedTransitions: [],
       };
     }
 
@@ -215,13 +218,13 @@ export const workOrdersService = {
     return data.data;
   },
 
-  // MODIFICADO (Fase 8): ahora actualiza de verdad la tarea en el almacen mock (antes era un no-op que
-  // esperaba y retornaba sin persistir ningun cambio, dejando la UI desincronizada tras refrescar).
+  // Cambio de estado de una tarea; completar requiere horas reales
   async updateTaskStatus(
     id: string,
     taskId: string,
     status: WorkOrderTaskStatus,
-    observations?: string
+    observations?: string,
+    actualHours?: number
   ): Promise<void> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 300));
@@ -230,13 +233,34 @@ export const workOrdersService = {
         task.status = status;
         task.observations = observations;
         if (status === 'Completada') task.completedAt = new Date().toISOString();
+        if (actualHours !== undefined) task.actualHours = actualHours;
       }
       return;
     }
-    await apiClient.patch(`/work-orders/${id}/tasks/${taskId}/status`, { status, observations });
+    await apiClient.patch(`/work-orders/${id}/tasks/${taskId}/status`, { status, observations, actualHours });
   },
 
-  // Agrega un material/repuesto pedido a una OT (Fase 8: WorkOrderMaterial no tenia service ni endpoint)
+  // Asigna la tarea a un mecanico de la OT (null la deja sin responsable)
+  async assignTask(id: string, taskId: string, userId: string | null): Promise<void> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 200));
+      return;
+    }
+    await apiClient.patch(`/work-orders/${id}/tasks/${taskId}/assignee`, { userId });
+  },
+
+  // Adjunta un documento a la OT
+  async addDocument(id: string, payload: CreateWorkOrderDocumentPayload): Promise<WorkOrderDocument> {
+    if (ENV.ENABLE_MOCK_API) {
+      await new Promise((r) => setTimeout(r, 300));
+      return { id: `doc-${Date.now()}`, ...payload, uploadedById: 'mock', uploadedAt: new Date().toISOString() };
+    }
+    const { data } = await apiClient.post<ApiResponse<WorkOrderDocument>>(`/work-orders/${id}/documents`, payload);
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al adjuntar el documento');
+    return data.data;
+  },
+
+  // Agrega un material/repuesto pedido a una OT
   async addMaterial(id: string, payload: CreateWorkOrderMaterialPayload): Promise<WorkOrderMaterial> {
     if (ENV.ENABLE_MOCK_API) {
       await new Promise((r) => setTimeout(r, 400));

@@ -17,7 +17,7 @@ import {
   useInspectionsReport,
   useMonthlyWorkshopHours,
 } from '../hooks/useReports';
-import { formatCurrency, formatDate, downloadCsv } from '@/lib/utils';
+import { formatCurrency, formatDate, downloadCsv, todayLocal } from '@/lib/utils';
 
 const STATUS_COLORS: Record<string, string> = {
   Operativa: '#10b981',
@@ -39,7 +39,7 @@ function exportWorkOrdersReportToCsv(workOrders: { number: string; type: string;
     w.actualHours,
     formatDate(w.createdAt),
   ]);
-  downloadCsv(`informe-ot-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+  downloadCsv(`informe-ot-${todayLocal()}.csv`, headers, rows);
 }
 
 // Descarga el detalle del reporte de inspecciones como CSV del lado del cliente
@@ -54,21 +54,21 @@ function exportInspectionsReportToCsv(inspections: { workOrderNumber: string; ty
     formatDate(i.scheduledDate),
     i.completedAt ? formatDate(i.completedAt) : '',
   ]);
-  downloadCsv(`resumen-inspecciones-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+  downloadCsv(`resumen-inspecciones-${todayLocal()}.csv`, headers, rows);
 }
 
 // Descarga el detalle del reporte de estado de flota como CSV del lado del cliente
 function exportAircraftReportToCsv(aircraft: { registration: string; model: string; category: string; status: string; totalFlightHours: number }[]): void {
   const headers = ['Matrícula', 'Modelo', 'Categoría', 'Estado', 'Horas de vuelo'];
   const rows = aircraft.map((a) => [a.registration, a.model, a.category, a.status, a.totalFlightHours]);
-  downloadCsv(`estado-de-flota-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+  downloadCsv(`estado-de-flota-${todayLocal()}.csv`, headers, rows);
 }
 
 // Descarga el detalle del reporte de inventario como CSV del lado del cliente
 function exportInventoryReportToCsv(items: { partNumber: string; description: string; category: string; status: string; currentStock: number; unitCost: number }[]): void {
   const headers = ['N° de parte', 'Descripción', 'Categoría', 'Estado', 'Stock actual', 'Costo unitario'];
   const rows = items.map((i) => [i.partNumber, i.description, i.category, i.status, i.currentStock, i.unitCost]);
-  downloadCsv(`inventario-panol-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+  downloadCsv(`inventario-panol-${todayLocal()}.csv`, headers, rows);
 }
 
 // MODIFICADO: se conectan las 4 tarjetas de reportes a sus hooks reales (useWorkOrdersReport, useInspectionsReport, useAircraftStatusReport, useInventoryReport),

@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { csvEscape, formatFlightHours, getInitials, toDateInput, truncate } from './utils';
+import { afterEach, vi } from 'vitest';
+import { csvEscape, formatFlightHours, getInitials, toDateInput, todayLocal, truncate } from './utils';
+
+describe('todayLocal', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('a la noche devuelve el dia local y no el de UTC', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 20, 22, 30));
+
+    expect(todayLocal()).toBe('2026-11-20');
+  });
+});
 
 describe('toDateInput', () => {
   it('recorta la fecha ISO del backend al formato del input date', () => {

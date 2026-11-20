@@ -17,6 +17,14 @@ export interface User {
   createdAt: string;
 }
 
+/** Usuario activo para combos de asignacion (GET /users/lookup) */
+export interface UserLookup {
+  id: string;
+  fullName: string;
+  role: UserRole;
+  licenseNumber?: string;
+}
+
 export interface UserFilters {
   role?: UserRole;
   isActive?: boolean;

@@ -11,6 +11,7 @@ const ROUTE_LABELS: Record<string, string> = {
   'ordenes-de-trabajo': 'Órdenes de Trabajo',
   nueva: 'Registrar',
   nuevo: 'Registrar',
+  editar: 'Editar',
   'turnos': 'Turnos',
   'aeronaves': 'Aeronaves',
   'clientes': 'Clientes',

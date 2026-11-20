@@ -1,5 +1,8 @@
+import { addDays, format } from 'date-fns';
 import { describe, expect, it } from 'vitest';
 import { addMaterialSchema, addTaskSchema, workOrderEditSchema, workOrderSchema } from './workOrder.schema';
+
+const day = (offset: number): string => format(addDays(new Date(), offset), 'yyyy-MM-dd');
 
 const validWorkOrder = {
   type: 'Inspeccion100h',
@@ -7,8 +10,8 @@ const validWorkOrder = {
   aircraftId: 'a1',
   description: 'Inspeccion de 100 horas completa',
   estimatedHours: 8,
-  intakeDate: '2026-11-20',
-  estimatedEndDate: '2026-11-25',
+  intakeDate: day(0),
+  estimatedEndDate: day(5),
 };
 
 describe('workOrderSchema', () => {
@@ -31,9 +34,32 @@ describe('workOrderSchema', () => {
   it('exige al menos media hora estimada', () => {
     expect(workOrderSchema.safeParse({ ...validWorkOrder, estimatedHours: 0.25 }).success).toBe(false);
   });
+
+  it('rechaza un fin estimado anterior al ingreso', () => {
+    expect(workOrderSchema.safeParse({ ...validWorkOrder, intakeDate: day(3), estimatedEndDate: day(1) }).success).toBe(false);
+  });
+
+  it('rechaza un fin estimado pasado al registrar', () => {
+    expect(workOrderSchema.safeParse({ ...validWorkOrder, intakeDate: day(-10), estimatedEndDate: day(-1) }).success).toBe(false);
+  });
+
+  it('acepta fin estimado hoy', () => {
+    expect(workOrderSchema.safeParse({ ...validWorkOrder, estimatedEndDate: day(0) }).success).toBe(true);
+  });
 });
 
 describe('workOrderEditSchema', () => {
+  it('al editar permite fechas pasadas si el fin no es anterior al ingreso', () => {
+    const result = workOrderEditSchema.safeParse({
+      priority: 'Media',
+      description: validWorkOrder.description,
+      estimatedHours: 4,
+      intakeDate: day(-10),
+      estimatedEndDate: day(-2),
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('no pide tipo ni aeronave', () => {
     const editable = {
       priority: validWorkOrder.priority,

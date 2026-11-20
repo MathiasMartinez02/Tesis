@@ -32,6 +32,7 @@ export const ROUTES = {
   // Turnos
   APPOINTMENTS: '/turnos',
   APPOINTMENT_NEW: '/turnos/nuevo',
+  APPOINTMENT_EDIT: '/turnos/:id/editar',
 
   // Taller
   WORKSHOP: '/taller',

@@ -5,6 +5,7 @@ import type {
   UserRole,
   CreateUserPayload,
   UpdateUserPayload,
+  UserLookup,
   ApiResponse,
 } from '@/types';
 import { ENV } from '@/config/env';
@@ -138,6 +139,25 @@ export const usersService = {
 
     const { data } = await apiClient.patch<ApiResponse<null>>(`/users/${id}/status`, { isActive });
     if (!data.success) throw new Error(data.errors?.[0] ?? 'Error al actualizar estado');
+  },
+
+  // Usuarios activos de los roles indicados, para combos de asignacion
+  async lookup(roles: UserRole[] = []): Promise<UserLookup[]> {
+    if (ENV.ENABLE_MOCK_API) {
+      return MOCK_USERS.filter((u) => u.isActive && (roles.length === 0 || roles.includes(u.role))).map((u) => ({
+        id: u.id,
+        fullName: `${u.firstName} ${u.lastName}`,
+        role: u.role,
+        licenseNumber: u.licenseNumber,
+      }));
+    }
+
+    const { data } = await apiClient.get<ApiResponse<UserLookup[]>>('/users/lookup', {
+      params: { role: roles },
+      paramsSerializer: { indexes: null },
+    });
+    if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar usuarios');
+    return data.data;
   },
 
   // Contraseña nueva asignada por el gerente

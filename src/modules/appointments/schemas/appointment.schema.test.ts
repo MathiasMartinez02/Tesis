@@ -1,10 +1,11 @@
+import { addDays, format, subHours } from 'date-fns';
 import { describe, expect, it } from 'vitest';
 import { appointmentSchema } from './appointment.schema';
 
 const base = {
   clientId: 'c1',
   requestedType: 'InspeccionAnual',
-  scheduledDate: '2026-12-01T10:00',
+  scheduledDate: format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm"),
 };
 
 describe('appointmentSchema', () => {
@@ -20,6 +21,12 @@ describe('appointmentSchema', () => {
 
   it('sin aeronave registrada exige la matricula', () => {
     const result = appointmentSchema.safeParse({ ...base, useRegisteredAircraft: false, aircraftRegistrationHint: '  ' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rechaza un turno en el pasado', () => {
+    const past = format(subHours(new Date(), 1), "yyyy-MM-dd'T'HH:mm");
+    const result = appointmentSchema.safeParse({ ...base, scheduledDate: past, useRegisteredAircraft: true, aircraftId: 'a1' });
     expect(result.success).toBe(false);
   });
 

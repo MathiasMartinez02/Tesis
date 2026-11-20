@@ -108,9 +108,9 @@ const AppointmentsListPage = lazy(() =>
   }))
 );
 
-const AppointmentNewPage = lazy(() =>
-  import('@/modules/appointments/pages/AppointmentNewPage').then((m) => ({
-    default: m.AppointmentNewPage,
+const AppointmentFormPage = lazy(() =>
+  import('@/modules/appointments/pages/AppointmentFormPage').then((m) => ({
+    default: m.AppointmentFormPage,
   }))
 );
 
@@ -335,7 +335,15 @@ const router = createBrowserRouter([
             path: ROUTES.APPOINTMENT_NEW,
             element: (
               <Suspense fallback={<PageLoader />}>
-                <PermissionRoute permission={APPOINTMENTS_MANAGE}><AppointmentNewPage /></PermissionRoute>
+                <PermissionRoute permission={APPOINTMENTS_MANAGE}><AppointmentFormPage /></PermissionRoute>
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.APPOINTMENT_EDIT,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PermissionRoute permission={APPOINTMENTS_MANAGE}><AppointmentFormPage /></PermissionRoute>
               </Suspense>
             ),
           },

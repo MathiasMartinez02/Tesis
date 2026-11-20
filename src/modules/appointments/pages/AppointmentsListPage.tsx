@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, AlertTriangle, CheckCircle2, XCircle, ArrowRightCircle } from 'lucide-react';
+import { Plus, AlertTriangle, CheckCircle2, XCircle, ArrowRightCircle, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
@@ -127,6 +127,22 @@ export function AppointmentsListPage(): JSX.Element {
       width: '220px',
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
+          {(row.status === 'Solicitado' || row.status === 'Confirmado') && (
+            <RoleGuard permission={APPOINTMENTS_MANAGE}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Editar turno"
+                title="Editar turno"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(buildRoute(ROUTES.APPOINTMENT_EDIT, { id: row.id }));
+                }}
+              >
+                <Pencil size={13} />
+              </Button>
+            </RoleGuard>
+          )}
           {row.status === 'Solicitado' && (
             <RoleGuard permission={APPOINTMENTS_MANAGE}>
               <Button

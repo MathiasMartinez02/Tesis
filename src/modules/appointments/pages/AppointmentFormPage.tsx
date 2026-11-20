@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { appointmentSchema, type AppointmentFormData } from '../schemas/appointment.schema';
@@ -9,9 +10,11 @@ import { Input } from '@/shared/components/ui/Input';
 import { Select } from '@/shared/components/ui/Select';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
+import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
+import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { ROUTES, WORK_ORDER_TYPE_LABELS } from '@/constants';
-import type { CreateAppointmentPayload, SelectOption } from '@/types';
-import { useCreateAppointment } from '../hooks/useAppointments';
+import type { SelectOption } from '@/types';
+import { useAppointment, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments';
 import { useClients } from '@/modules/clients/hooks/useClients';
 import { useAircraft } from '@/modules/aircraft/hooks/useAircraft';
 
@@ -20,9 +23,13 @@ const TYPE_OPTIONS: SelectOption[] = Object.entries(WORK_ORDER_TYPE_LABELS).map(
   label,
 }));
 
-export function AppointmentNewPage(): JSX.Element {
+// Alta de turno o edicion (reprogramar y asociar la aeronave ya registrada)
+export function AppointmentFormPage(): JSX.Element {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEdit = !!id;
 
+  const { data: appointment, isLoading: isLoadingAppointment, isError } = useAppointment(id ?? '');
   const { data: clientsPage, isLoading: isLoadingClients } = useClients({}, 1, 100);
   const CLIENT_OPTIONS: SelectOption[] = (clientsPage?.data ?? []).map((client) => ({
     value: client.id,
@@ -30,11 +37,13 @@ export function AppointmentNewPage(): JSX.Element {
   }));
 
   const createAppointment = useCreateAppointment();
+  const updateAppointment = useUpdateAppointment();
 
   const {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
@@ -44,10 +53,23 @@ export function AppointmentNewPage(): JSX.Element {
     },
   });
 
+  useEffect(() => {
+    if (appointment) {
+      reset({
+        clientId: appointment.clientId,
+        useRegisteredAircraft: !!appointment.aircraftId,
+        aircraftId: appointment.aircraftId ?? undefined,
+        aircraftRegistrationHint: appointment.aircraftId ? '' : appointment.aircraftRegistration ?? '',
+        requestedType: appointment.requestedType,
+        scheduledDate: appointment.scheduledDate.slice(0, 16),
+        notes: appointment.notes ?? '',
+      });
+    }
+  }, [appointment, reset]);
+
   const selectedClientId = watch('clientId');
   const useRegisteredAircraft = watch('useRegisteredAircraft');
 
-  // Trae las aeronaves del cliente seleccionado para el select de aeronave ya registrada
   const { data: aircraftPage, isLoading: isLoadingAircraft } = useAircraft(
     selectedClientId ? { clientId: selectedClientId } : {},
     1,
@@ -58,19 +80,25 @@ export function AppointmentNewPage(): JSX.Element {
     label: `${aircraft.registration} — ${aircraft.manufacturer} ${aircraft.model}`,
   }));
 
-  // Construye el payload segun el toggle de aeronave registrada y crea el turno
+  // Arma el payload segun el toggle de aeronave y crea o actualiza el turno
   const onSubmit = async (data: AppointmentFormData): Promise<void> => {
-    const payload: CreateAppointmentPayload = {
-      clientId: data.clientId,
+    const common = {
       aircraftId: data.useRegisteredAircraft ? data.aircraftId : null,
       aircraftRegistrationHint: data.useRegisteredAircraft ? null : data.aircraftRegistrationHint,
       requestedType: data.requestedType,
       scheduledDate: data.scheduledDate,
       notes: data.notes?.trim() ? data.notes : null,
     };
-    await createAppointment.mutateAsync(payload);
+    if (isEdit && id) {
+      await updateAppointment.mutateAsync({ id, payload: common });
+    } else {
+      await createAppointment.mutateAsync({ clientId: data.clientId, ...common });
+    }
     navigate(ROUTES.APPOINTMENTS);
   };
+
+  if (isEdit && isLoadingAppointment) return <PageLoader />;
+  if (isEdit && (isError || !appointment)) return <ErrorState title="Turno no encontrado" />;
 
   return (
     <motion.div
@@ -80,41 +108,38 @@ export function AppointmentNewPage(): JSX.Element {
       className="max-w-3xl"
     >
       <PageHeader
-        title="Registrar Turno"
-        description="Registrá el pedido de turno del cliente"
+        title={isEdit ? 'Editar Turno' : 'Registrar Turno'}
+        description={isEdit ? 'Reprogramá el turno o asociá la aeronave ya registrada' : 'Registrá el pedido de turno del cliente'}
         actions={
-          <Button
-            variant="ghost"
-            size="sm"
-            leftIcon={<ArrowLeft size={14} />}
-            onClick={() => navigate(ROUTES.APPOINTMENTS)}
-          >
+          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={14} />} onClick={() => navigate(ROUTES.APPOINTMENTS)}>
             Volver
           </Button>
         }
       />
 
-      <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
+      <form onSubmit={(e) => void handleSubmit(onSubmit)(e).catch(() => undefined)} noValidate>
         <div className="space-y-5">
-          {/* Cliente */}
           <Card>
             <CardHeader>
               <CardTitle>Cliente</CardTitle>
             </CardHeader>
             <CardBody>
-              <Select
-                label="Cliente"
-                options={CLIENT_OPTIONS}
-                placeholder={isLoadingClients ? 'Cargando clientes...' : 'Seleccionar cliente'}
-                error={errors.clientId?.message}
-                disabled={isLoadingClients}
-                required
-                {...register('clientId')}
-              />
+              {isEdit ? (
+                <Input label="Cliente" value={appointment?.clientName ?? ''} disabled readOnly />
+              ) : (
+                <Select
+                  label="Cliente"
+                  options={CLIENT_OPTIONS}
+                  placeholder={isLoadingClients ? 'Cargando clientes...' : 'Seleccionar cliente'}
+                  error={errors.clientId?.message}
+                  disabled={isLoadingClients}
+                  required
+                  {...register('clientId')}
+                />
+              )}
             </CardBody>
           </Card>
 
-          {/* Aeronave */}
           <Card>
             <CardHeader>
               <CardTitle>Aeronave</CardTitle>
@@ -154,7 +179,6 @@ export function AppointmentNewPage(): JSX.Element {
             </CardBody>
           </Card>
 
-          {/* Detalles del turno */}
           <Card>
             <CardHeader>
               <CardTitle>Detalles del Turno</CardTitle>
@@ -188,22 +212,22 @@ export function AppointmentNewPage(): JSX.Element {
                     className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-surface-400 focus:border-aviation-500 focus:ring-2 focus:ring-aviation-500/20 dark:border-surface-600 dark:bg-surface-800 dark:text-white"
                     {...register('notes')}
                   />
+                  {errors.notes?.message && <p className="mt-1 text-xs text-red-500">{errors.notes.message}</p>}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          {/* Acciones */}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => navigate(ROUTES.APPOINTMENTS)}>
               Cancelar
             </Button>
             <Button
               type="submit"
-              isLoading={isSubmitting || createAppointment.isPending}
+              isLoading={isSubmitting || createAppointment.isPending || updateAppointment.isPending}
               leftIcon={<Save size={15} />}
             >
-              Crear Turno
+              {isEdit ? 'Guardar cambios' : 'Registrar Turno'}
             </Button>
           </div>
         </div>

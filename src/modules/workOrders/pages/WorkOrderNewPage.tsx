@@ -13,6 +13,7 @@ import { ROUTES, WORK_ORDER_TYPE_LABELS, WORK_ORDER_PRIORITY_LABELS, buildRoute 
 import type { SelectOption } from '@/types';
 import { useCreateWorkOrder } from '../hooks/useWorkOrders';
 import { useAircraft } from '@/modules/aircraft/hooks/useAircraft';
+import { todayLocal } from '@/lib/utils';
 
 const TYPE_OPTIONS: SelectOption[] = Object.entries(WORK_ORDER_TYPE_LABELS).map(
   ([value, label]) => ({ value, label })
@@ -43,7 +44,7 @@ export function WorkOrderNewPage(): JSX.Element {
     defaultValues: {
       priority: 'Media',
       estimatedHours: 6,
-      intakeDate: new Date().toISOString().split('T')[0],
+      intakeDate: todayLocal(),
     },
   });
 

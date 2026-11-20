@@ -113,6 +113,7 @@ export interface WorkOrderDetail extends WorkOrder {
   documents: WorkOrderDocument[];
   assignedMechanics: AssignedMechanic[];
   inspections: WorkOrderInspection[];
+  allowedTransitions: WorkOrderStatus[];
 }
 
 /** Inspeccion de una OT dentro de su detalle */
@@ -164,6 +165,13 @@ export interface CreateWorkOrderTaskPayload {
 }
 
 // Payload para dar de alta un material/repuesto pedido por una OT (Fase 8)
+/** Payload para POST /work-orders/{id}/documents */
+export interface CreateWorkOrderDocumentPayload {
+  name: string;
+  type: string;
+  fileUrl: string;
+}
+
 export interface CreateWorkOrderMaterialPayload {
   partNumber: string;
   description: string;

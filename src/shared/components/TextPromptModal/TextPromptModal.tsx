@@ -9,12 +9,20 @@ interface TextPromptModalProps {
   label: string;
   confirmLabel: string;
   confirmVariant?: 'primary' | 'destructive';
+  inputType?: 'textarea' | 'number';
+  validate?: (value: string) => string | null;
   isLoading?: boolean;
   onConfirm: (text: string) => void;
   onClose: () => void;
 }
 
-// Modal que pide un texto obligatorio antes de confirmar
+const FIELD_CLASS =
+  'w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-surface-400 focus:border-aviation-500 focus:ring-2 focus:ring-aviation-500/20 dark:border-surface-600 dark:bg-surface-800 dark:text-white';
+
+// Texto obligatorio por defecto
+const requireText = (value: string): string | null => (value.trim() ? null : 'Este campo es obligatorio');
+
+// Modal que pide un texto o numero validado antes de confirmar
 export function TextPromptModal({
   isOpen,
   title,
@@ -22,28 +30,28 @@ export function TextPromptModal({
   label,
   confirmLabel,
   confirmVariant = 'primary',
+  inputType = 'textarea',
+  validate = requireText,
   isLoading = false,
   onConfirm,
   onClose,
 }: TextPromptModalProps): JSX.Element {
   const [text, setText] = useState('');
-  const [showError, setShowError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fieldId = useId();
 
   useEffect(() => {
     if (isOpen) {
       setText('');
-      setShowError(false);
+      setError(null);
     }
   }, [isOpen]);
 
-  // Valida el texto y confirma
+  // Valida el valor y confirma
   const handleConfirm = (): void => {
-    if (!text.trim()) {
-      setShowError(true);
-      return;
-    }
-    onConfirm(text.trim());
+    const validationError = validate(text);
+    setError(validationError);
+    if (!validationError) onConfirm(text.trim());
   };
 
   return (
@@ -67,14 +75,27 @@ export function TextPromptModal({
       <label htmlFor={fieldId} className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
         {label} <span className="text-red-500">*</span>
       </label>
-      <textarea
-        id={fieldId}
-        rows={3}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-surface-400 focus:border-aviation-500 focus:ring-2 focus:ring-aviation-500/20 dark:border-surface-600 dark:bg-surface-800 dark:text-white"
-      />
-      {showError && <p className="mt-1 text-xs text-red-500">Este campo es obligatorio</p>}
+      {inputType === 'number' ? (
+        <input
+          id={fieldId}
+          type="number"
+          inputMode="decimal"
+          step="0.5"
+          min="0"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className={FIELD_CLASS}
+        />
+      ) : (
+        <textarea
+          id={fieldId}
+          rows={3}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className={`${FIELD_CLASS} resize-none`}
+        />
+      )}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </Modal>
   );
 }

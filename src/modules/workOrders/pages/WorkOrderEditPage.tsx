@@ -16,7 +16,7 @@ import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { ROUTES, WORK_ORDER_TYPE_LABELS, WORK_ORDER_PRIORITY_LABELS, buildRoute } from '@/constants';
 import { useWorkOrder, useUpdateWorkOrderFull } from '../hooks/useWorkOrders';
-import { useUsers } from '@/hooks/useUsers';
+import { useUserLookup } from '@/modules/settings/hooks/useUsers';
 import type { SelectOption, AssignedMechanic } from '@/types';
 
 const PRIORITY_OPTIONS: SelectOption[] = Object.entries(WORK_ORDER_PRIORITY_LABELS).map(
@@ -29,12 +29,7 @@ export function WorkOrderEditPage(): JSX.Element {
   const { data: order, isLoading, isError, refetch } = useWorkOrder(id ?? '');
   const { mutate: updateOrder, isPending } = useUpdateWorkOrderFull();
 
-  // Fetch mechanics and workshop chiefs from the real users API
-  const { data: usersData } = useUsers({ isActive: true });
-  const allPersonnel = usersData?.data ?? [];
-  const mechanicPool = allPersonnel.filter(
-    (u) => u.role === 'Mecanico' || u.role === 'JefeTaller'
-  );
+  const { data: mechanicPool = [] } = useUserLookup(['Mecanico', 'JefeTaller']);
 
   const [mechanics, setMechanics] = useState<AssignedMechanic[]>([]);
   const [originalMechanicIds, setOriginalMechanicIds] = useState<string[]>([]);

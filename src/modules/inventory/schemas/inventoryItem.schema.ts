@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { optionalText } from '@/lib/zod';
+import { optionalText, optionalTextMax, requiredText } from '@/lib/zod';
 
 // Numero opcional que acepta el NaN de un input vacio
 const optionalNumber = () =>
@@ -16,8 +16,8 @@ const maximumStockRule = {
 
 export const inventoryItemSchema = z
   .object({
-    partNumber: z.string().min(1, 'Requerido'),
-    description: z.string().min(5, 'Mínimo 5 caracteres'),
+    partNumber: requiredText(100),
+    description: z.string().trim().min(5, 'Mínimo 5 caracteres').max(500, 'Máximo 500 caracteres'),
     category: z.enum([
       'RepuestoMotor',
       'RepuestoCelula',
@@ -27,29 +27,33 @@ export const inventoryItemSchema = z
       'Instrumento',
       'Avionico',
     ]),
-    manufacturer: z.string().min(1, 'Requerido'),
-    location: z.string().min(1, 'Requerido'),
+    manufacturer: requiredText(150),
+    location: requiredText(100),
     currentStock: z.number().min(0),
     minimumStock: z.number().min(0),
     maximumStock: optionalNumber(),
-    unit: z.string().min(1, 'Requerido'),
+    unit: requiredText(30),
     unitCost: z.number().min(0),
     certificationRequired: z.boolean(),
-    certificateNumber: optionalText(),
+    certificateNumber: optionalTextMax(100),
     expiryDate: optionalText(),
   })
-  .refine(maximumStockRule.check, maximumStockRule.options);
+  .refine(maximumStockRule.check, maximumStockRule.options)
+  .refine((data) => !data.certificationRequired || !!data.certificateNumber, {
+    message: 'El ítem requiere certificación: indicá el número de certificado',
+    path: ['certificateNumber'],
+  });
 
 export type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
 
 export const inventoryItemEditSchema = z
   .object({
-    description: z.string().min(5, 'Mínimo 5 caracteres'),
-    location: z.string().min(1, 'Requerido'),
+    description: z.string().trim().min(5, 'Mínimo 5 caracteres').max(500, 'Máximo 500 caracteres'),
+    location: requiredText(100),
     minimumStock: z.number().min(0),
     maximumStock: optionalNumber(),
     unitCost: z.number().min(0),
-    certificateNumber: optionalText(),
+    certificateNumber: optionalTextMax(100),
     expiryDate: optionalText(),
   })
   .refine(maximumStockRule.check, maximumStockRule.options);

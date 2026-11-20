@@ -4,7 +4,7 @@ import { optionalText } from '@/lib/zod';
 export const movementSchema = z.object({
   type: z.enum(['Entrada', 'Salida', 'Reserva', 'Devolucion', 'Ajuste']),
   quantity: z.number().min(1, 'Debe ser mayor a 0'),
-  reason: z.string().min(3, 'Mínimo 3 caracteres'),
+  reason: z.string().trim().min(3, 'Mínimo 3 caracteres').max(500, 'Máximo 500 caracteres'),
   workOrderId: optionalText(),
 });
 

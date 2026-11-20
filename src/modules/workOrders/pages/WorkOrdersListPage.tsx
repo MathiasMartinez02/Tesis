@@ -18,7 +18,7 @@ import {
   WORK_ORDER_PRIORITY_LABELS,
 } from '@/constants';
 import type { WorkOrder, WorkOrderFilters, TableColumn } from '@/types';
-import { formatDate, downloadCsv } from '@/lib/utils';
+import { formatDate, downloadCsv, todayLocal } from '@/lib/utils';
 import { RoleGuard } from '@/routes/RoleGuard';
 
 const COLUMNS: TableColumn<WorkOrder>[] = [
@@ -127,7 +127,7 @@ function exportWorkOrdersToCsv(orders: WorkOrder[]): void {
     o.intakeDate ? formatDate(o.intakeDate) : '',
     formatDate(o.estimatedEndDate),
   ]);
-  downloadCsv(`ordenes-de-trabajo-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+  downloadCsv(`ordenes-de-trabajo-${todayLocal()}.csv`, headers, rows);
 }
 
 // MODIFICADO: agrega contadores de Pendientes/En proceso/Finalizadas sobre los datos cargados y conecta el botón Exportar a una descarga CSV del lado del cliente

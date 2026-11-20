@@ -24,6 +24,9 @@ export interface AppointmentFilters {
   dateTo?: string;
 }
 
+/** Payload para editar un turno (PUT /appointments/{id}); el cliente no cambia */
+export type UpdateAppointmentPayload = Omit<CreateAppointmentPayload, 'clientId'>;
+
 /** Payload para crear un turno (POST /appointments) */
 export interface CreateAppointmentPayload {
   clientId: string;

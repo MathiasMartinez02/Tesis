@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentsService } from '@/services/api/appointments.service';
-import type { AppointmentFilters, AppointmentStatus, CreateAppointmentPayload } from '@/types';
+import type { AppointmentFilters, AppointmentStatus, CreateAppointmentPayload, UpdateAppointmentPayload } from '@/types';
 import { useUIStore } from '@/store/uiStore';
 import { WORK_ORDERS_QUERY_KEY } from '@/modules/workOrders/hooks/useWorkOrders';
 
@@ -41,6 +41,24 @@ export function useCreateAppointment() {
 }
 
 // Confirma o cancela un turno existente y refresca listado y detalle
+// Edicion de turno (fecha, tipo, aeronave, notas)
+export function useUpdateAppointment() {
+  const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAppointmentPayload }) =>
+      appointmentsService.update(id, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: APPOINTMENTS_QUERY_KEY });
+      addToast({ type: 'success', title: 'Turno actualizado' });
+    },
+    onError: (err: Error) => {
+      addToast({ type: 'error', title: 'Error al actualizar el turno', description: err.message });
+    },
+  });
+}
+
 export function useUpdateAppointmentStatus() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);

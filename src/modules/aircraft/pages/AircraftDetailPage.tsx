@@ -11,6 +11,9 @@ import {
   Pencil,
   Wrench,
   Package,
+  PlaneTakeoff,
+  Ban,
+  CheckCircle2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
@@ -24,7 +27,9 @@ import {
   useAircraftById,
   useAircraftMaintenanceHistory,
   useAircraftInventoryUsage,
+  useUpdateAircraftStatus,
 } from '../hooks/useAircraft';
+import { AddFlightRecordModal } from '../components/AddFlightRecordModal';
 import { AddAircraftDocumentModal } from '../components/AddAircraftDocumentModal';
 import { ROUTES, buildRoute, WORK_ORDER_TYPE_LABELS } from '@/constants';
 import { formatDate, formatFlightHours, daysUntil } from '@/lib/utils';
@@ -46,6 +51,8 @@ export function AircraftDetailPage(): JSX.Element {
     isLoading: isLoadingInventoryUsage,
   } = useAircraftInventoryUsage(id ?? '');
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
+  const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateAircraftStatus();
 
   if (isLoading) return <PageLoader />;
   if (isError || !aircraft) {
@@ -96,14 +103,41 @@ export function AircraftDetailPage(): JSX.Element {
           </div>
         </div>
         <RoleGuard permission="canManageAircraft">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Pencil size={14} />}
-            onClick={() => navigate(buildRoute(ROUTES.AIRCRAFT_EDIT, { id: aircraft.id }))}
-          >
-            Editar
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Pencil size={14} />}
+              onClick={() => navigate(buildRoute(ROUTES.AIRCRAFT_EDIT, { id: aircraft.id }))}
+            >
+              Editar
+            </Button>
+            {aircraft.status === 'FueraDeServicio' ? (
+              <Button
+                variant="success"
+                size="sm"
+                leftIcon={<CheckCircle2 size={14} />}
+                isLoading={isUpdatingStatus}
+                onClick={() => updateStatus({ id: aircraft.id, status: 'Operativa' })}
+              >
+                Volver a servicio
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                size="sm"
+                leftIcon={<Ban size={14} />}
+                isLoading={isUpdatingStatus}
+                onClick={() => {
+                  if (window.confirm(`¿Poner ${aircraft.registration} fuera de servicio? No va a poder recibir nuevas OT.`)) {
+                    updateStatus({ id: aircraft.id, status: 'FueraDeServicio' });
+                  }
+                }}
+              >
+                Fuera de servicio
+              </Button>
+            )}
+          </div>
         </RoleGuard>
       </div>
 
@@ -223,6 +257,54 @@ export function AircraftDetailPage(): JSX.Element {
               </CardBody>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Vuelos ({aircraft.flightHistory.length})</CardTitle>
+              <RoleGuard permission="canManageAircraft">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<PlaneTakeoff size={14} />}
+                  onClick={() => setIsFlightModalOpen(true)}
+                >
+                  Registrar vuelo
+                </Button>
+              </RoleGuard>
+            </CardHeader>
+            <CardBody>
+              {aircraft.flightHistory.length === 0 ? (
+                <p className="text-sm italic text-surface-400">Sin vuelos registrados</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-surface-100 text-left text-xs uppercase text-surface-400 dark:border-surface-700">
+                        <th className="py-2 pr-3 font-semibold">Fecha</th>
+                        <th className="py-2 pr-3 font-semibold">Ruta</th>
+                        <th className="py-2 pr-3 font-semibold">Piloto</th>
+                        <th className="py-2 pr-3 text-right font-semibold">Horas</th>
+                        <th className="py-2 text-right font-semibold">Aterrizajes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aircraft.flightHistory.map((flight) => (
+                        <tr key={flight.id} className="border-b border-surface-50 last:border-0 dark:border-surface-800">
+                          <td className="py-2 pr-3 text-surface-700 dark:text-surface-300">{formatDate(flight.date)}</td>
+                          <td className="py-2 pr-3 text-surface-700 dark:text-surface-300">
+                            {flight.origin} → {flight.destination}
+                          </td>
+                          <td className="py-2 pr-3 text-surface-700 dark:text-surface-300">{flight.pilot}</td>
+                          <td className="py-2 pr-3 text-right font-mono">{formatFlightHours(flight.duration)}</td>
+                          <td className="py-2 text-right font-mono">{flight.landings}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
 
           {/* Historial de mantenimiento: OTs asociadas a la aeronave */}
           <Card>
@@ -441,6 +523,11 @@ export function AircraftDetailPage(): JSX.Element {
         aircraftId={aircraft.id}
         isOpen={isDocumentModalOpen}
         onClose={() => setIsDocumentModalOpen(false)}
+      />
+      <AddFlightRecordModal
+        aircraftId={aircraft.id}
+        isOpen={isFlightModalOpen}
+        onClose={() => setIsFlightModalOpen(false)}
       />
     </motion.div>
   );
