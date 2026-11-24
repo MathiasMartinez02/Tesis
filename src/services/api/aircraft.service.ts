@@ -14,8 +14,6 @@ import type {
   ApiResponse,
   PaginatedResult,
 } from '@/types';
-import { MOCK_AIRCRAFT } from '@/mocks/aircraft.mock';
-import { ENV } from '@/config/env';
 import apiClient from '@/lib/axios';
 
 export const aircraftService = {
@@ -24,32 +22,6 @@ export const aircraftService = {
     page = 1,
     pageSize = 10
   ): Promise<PaginatedResult<Aircraft>> {
-    if (ENV.ENABLE_MOCK_API) {
-      await new Promise((r) => setTimeout(r, 400));
-      const filtered = MOCK_AIRCRAFT.filter((a) => {
-        if (filters.status && a.status !== filters.status) return false;
-        if (filters.category && a.category !== filters.category) return false;
-        if (filters.clientId && a.clientId !== filters.clientId) return false;
-        if (filters.search) {
-          const search = filters.search.toLowerCase();
-          return (
-            a.registration.toLowerCase().includes(search) ||
-            a.model.toLowerCase().includes(search) ||
-            a.clientName.toLowerCase().includes(search)
-          );
-        }
-        return true;
-      });
-      const start = (page - 1) * pageSize;
-      return {
-        data: filtered.slice(start, start + pageSize),
-        total: filtered.length,
-        page,
-        pageSize,
-        totalPages: Math.ceil(filtered.length / pageSize),
-      };
-    }
-
     const { data } = await apiClient.get<ApiResponse<PaginatedResult<Aircraft>>>('/aircraft', {
       params: { ...filters, page, pageSize },
     });
@@ -58,13 +30,6 @@ export const aircraftService = {
   },
 
   async getById(id: string): Promise<AircraftDetail> {
-    if (ENV.ENABLE_MOCK_API) {
-      await new Promise((r) => setTimeout(r, 300));
-      const aircraft = MOCK_AIRCRAFT.find((a) => a.id === id);
-      if (!aircraft) throw new Error('Aeronave no encontrada');
-      return { ...aircraft, documents: [], flightHistory: [], components: [] };
-    }
-
     const { data } = await apiClient.get<ApiResponse<AircraftDetail>>(`/aircraft/${id}`);
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Aeronave no encontrada');
     return data.data;
@@ -96,8 +61,6 @@ export const aircraftService = {
     return data.data;
   },
 
-  // MODIFICADO: usa el tipo exportado CreateAircraftDocumentPayload en vez de un objeto inline
-  // ANTERIOR: payload: { type: string; name: string; fileUrl: string; expiryDate?: string }
   async addDocument(
     id: string,
     payload: CreateAircraftDocumentPayload
@@ -122,8 +85,6 @@ export const aircraftService = {
     return data.data;
   },
 
-  // MODIFICADO: tipa el retorno como WorkOrder[] (numero, tipo, estado y fechas de cada OT) en vez de unknown[]
-  // ANTERIOR: Promise<unknown[]>
   async getMaintenanceHistory(id: string): Promise<WorkOrder[]> {
     const { data } = await apiClient.get<ApiResponse<WorkOrder[]>>(`/aircraft/${id}/maintenance-history`);
     if (!data.success || !data.data) throw new Error(data.errors?.[0] ?? 'Error al cargar historial');

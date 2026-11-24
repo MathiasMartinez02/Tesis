@@ -24,8 +24,6 @@ export const ROUTES = {
   CLIENT_EDIT: '/clientes/:id/editar',
 
   // Inspecciones
-  // MODIFICADO: se eliminó INSPECTION_NEW porque la programación de inspecciones ahora se hace desde el detalle de la OT, no desde una página independiente
-  // ANTERIOR: incluía INSPECTION_NEW: '/inspecciones/nueva'
   INSPECTIONS: '/inspecciones',
   INSPECTION_DETAIL: '/inspecciones/:id',
 
@@ -46,25 +44,21 @@ export const ROUTES = {
   // Documentación técnica
   TECHNICAL_DOCUMENTS: '/documentacion-tecnica',
 
-  // Presupuestos (Fase 6, MVP Administrativo)
+  // Presupuestos
   BUDGETS: '/presupuestos',
 
   // Reportes
   REPORTS: '/reportes',
 
   // Configuración
-  // MODIFICADO: se quita SETTINGS_SYSTEM (Fase 7): no existe ningun caso de uso real de "parametros del sistema" en el backend hoy,
-  // se documenta como decision de alcance en PLAN_ANALISIS_FUNCIONAL.md en vez de dejar una ruta/tarjeta apuntando a una pantalla vacia.
-  // ANTERIOR: incluia tambien SETTINGS_SYSTEM: '/configuracion/sistema'
   SETTINGS: '/configuracion',
   SETTINGS_USERS: '/configuracion/usuarios',
   SETTINGS_ROLES: '/configuracion/roles',
 
-  // Perfil propio (Fase 8): antes el boton "Mi Perfil" del Navbar no navegaba a ningun lado
+  // Perfil propio
   PROFILE: '/mi-perfil',
 
   // 404
-  NOT_FOUND: '/404',
 } as const;
 
 /** Genera paths con parámetros resueltos */

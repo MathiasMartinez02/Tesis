@@ -38,7 +38,7 @@ export function AuthLayout(): JSX.Element {
         </div>
 
         <p className="text-aviation-400 text-sm">
-          © {new Date().getFullYear()} SIGMA. Casi todos los derechos reservados.
+          © {new Date().getFullYear()} SIGMA. Todos los derechos reservados.
         </p>
       </div>
 

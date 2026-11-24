@@ -21,7 +21,7 @@ const CustomTooltip = ({
   label,
 }: {
   active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string }>;
+  payload?: { name: string; value: number; color: string }[];
   label?: string;
 }): JSX.Element | null => {
   if (!active || !payload) return null;

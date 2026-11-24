@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/config/env', () => ({ ENV: { ENABLE_MOCK_API: false } }));
 const { get } = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock('@/lib/axios', () => ({ default: { get } }));
 

@@ -1,4 +1,4 @@
-/** Tipos de documento del repositorio general de documentación técnica (Fase 4) */
+/** Tipos de documento del repositorio general de documentación técnica */
 export type TechnicalDocumentType = 'Manual' | 'BoletinServicio' | 'DirectivaAD' | 'Certificado' | 'Otro';
 
 /** TechnicalDocumentDto — lo que devuelve el listado y el detalle (GET /technical-documents, GET /technical-documents/{id}) */

@@ -89,8 +89,7 @@ export function useDeleteInventoryItem() {
   });
 }
 
-// MODIFICADO: ahora recibe el id del ítem como parte de las variables de la mutación (no como argumento del hook), para poder usarse con un id que todavía no existe al momento de montar el componente (ej. alta con stock inicial encadenada)
-// ANTERIOR: recibía itemId como argumento del hook y lo cerraba en el mutationFn, por lo que requería conocer el id antes de invocar el hook
+// Registra un movimiento de stock del item indicado en las variables
 export function useAddInventoryMovement() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);

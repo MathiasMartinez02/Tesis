@@ -67,6 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       disabled,
       children,
+      type = 'button',
       ...props
     },
     ref
@@ -74,6 +75,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        type={type}
         className={cn(buttonVariants({ variant, size }), className)}
         disabled={disabled ?? isLoading}
         aria-busy={isLoading}

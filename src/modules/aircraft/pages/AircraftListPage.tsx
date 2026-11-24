@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Plane, Pencil, History } from 'lucide-react';
+import { Plus, Plane, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
@@ -10,30 +10,23 @@ import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { Spinner } from '@/shared/components/ui/Spinner';
 import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
 import { useAircraft } from '../hooks/useAircraft';
-import { buildRoute, ROUTES } from '@/constants';
+import { AIRCRAFT_CATEGORY_LABELS, buildRoute, ROUTES } from '@/constants';
 import { formatDate, formatFlightHours, daysUntil, cn } from '@/lib/utils';
-import type { Aircraft, AircraftFilters } from '@/types';
+import type { Aircraft } from '@/types';
 import { RoleGuard } from '@/routes/RoleGuard';
+import { Pagination } from '@/shared/components/Pagination/Pagination';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { clickableProps } from '@/lib/a11y';
 
-const CATEGORY_LABELS = {
-  Avion: 'Avión',
-  Helicoptero: 'Helicóptero',
-  Planeador: 'Planeador',
-  Ultraliviano: 'Ultraliviano',
-} as const;
-
-// MODIFICADO: agrega props onEdit y onViewHistory para los botones "Editar" y "Ver historial" de cada tarjeta
-// ANTERIOR: solo recibía onClick para navegar al detalle
+// Tarjeta de aeronave: abre el detalle y permite editar
 function AircraftCard({
   aircraft,
   onClick,
   onEdit,
-  onViewHistory,
 }: {
   aircraft: Aircraft;
   onClick: () => void;
   onEdit: () => void;
-  onViewHistory: () => void;
 }): JSX.Element {
   const daysToInspection = aircraft.nextInspectionDue ? daysUntil(aircraft.nextInspectionDue) : null;
   const isInspectionUrgent = daysToInspection !== null && daysToInspection <= 30;
@@ -44,8 +37,8 @@ function AircraftCard({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
-      onClick={onClick}
-      className="cursor-pointer rounded-xl border border-surface-200 bg-white p-5 shadow-card transition-shadow hover:shadow-card-hover dark:border-surface-700 dark:bg-surface-800"
+      {...clickableProps(onClick)}
+      className="cursor-pointer rounded-xl border border-surface-200 bg-white p-5 shadow-card outline-none transition-shadow hover:shadow-card-hover focus-visible:ring-2 focus-visible:ring-aviation-500 dark:border-surface-700 dark:bg-surface-800"
       aria-label={`Aeronave ${aircraft.registration}`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -96,7 +89,7 @@ function AircraftCard({
             Tipo
           </p>
           <p className="mt-0.5 text-sm text-surface-700 dark:text-surface-300">
-            {CATEGORY_LABELS[aircraft.category]}
+            {AIRCRAFT_CATEGORY_LABELS[aircraft.category]}
           </p>
         </div>
         <div>
@@ -139,27 +132,21 @@ function AircraftCard({
             Editar
           </Button>
         </RoleGuard>
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<History size={13} />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewHistory();
-          }}
-        >
-          Ver historial
-        </Button>
       </div>
     </motion.article>
   );
 }
 
+const CARDS_PAGE_SIZE = 12;
+
+// Listado de aeronaves con busqueda y paginacion del servidor
 export function AircraftListPage(): JSX.Element {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<AircraftFilters>({});
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
 
-  const { data, isLoading, isError, refetch } = useAircraft(filters);
+  const { data, isLoading, isError, refetch } = useAircraft({ search: debouncedSearch || undefined }, page, CARDS_PAGE_SIZE);
 
   if (isError) {
     return (
@@ -192,8 +179,11 @@ export function AircraftListPage(): JSX.Element {
       {/* Filtros */}
       <div className="flex items-center gap-3">
         <SearchInput
-          value={filters.search ?? ''}
-          onChange={(v) => setFilters((f) => ({ ...f, search: v || undefined }))}
+          value={search}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
           placeholder="Buscar por matrícula, modelo o cliente..."
           className="w-72"
         />
@@ -218,10 +208,13 @@ export function AircraftListPage(): JSX.Element {
               aircraft={aircraft}
               onClick={() => navigate(buildRoute(ROUTES.AIRCRAFT_DETAIL, { id: aircraft.id }))}
               onEdit={() => navigate(buildRoute(ROUTES.AIRCRAFT_EDIT, { id: aircraft.id }))}
-              onViewHistory={() => navigate(buildRoute(ROUTES.AIRCRAFT_DETAIL, { id: aircraft.id }))}
             />
           ))}
         </div>
+      )}
+
+      {data && (
+        <Pagination page={page} pageSize={CARDS_PAGE_SIZE} total={data.total} totalPages={data.totalPages} onPageChange={setPage} />
       )}
     </motion.div>
   );

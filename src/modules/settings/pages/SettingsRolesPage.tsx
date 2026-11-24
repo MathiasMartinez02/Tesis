@@ -23,12 +23,7 @@ const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
 const ROLES = Object.keys(ROLE_LABELS) as UserRole[];
 const PERMISSIONS = Object.keys(PERMISSION_LABELS) as (keyof UserPermissions)[];
 
-// Pagina de solo lectura que muestra la matriz rol x permiso (ROLE_PERMISSIONS ya existia en constants/roles.ts, no habia pantalla que la mostrara).
-// Decision de diseño (Fase 7): no se agregan roles nuevos "Calidad"/"Direccion" al enum UserRole del backend porque no hay evidencia de que necesiten
-// un conjunto de permisos distinto al ya modelado — "Calidad" corresponde al rol Inspector (aprueba inspecciones, firma documentacion) y "Direccion"
-// corresponde a Gerente (acceso total, incluye reportes). Ver PLAN_ANALISIS_FUNCIONAL.md, seccion Fase 7, para el detalle de esta decision.
-// La matriz tampoco es editable desde la UI porque los permisos estan fijados en el enum del backend (User.GetPermissions()), no en una tabla:
-// ofrecer controles de edicion aca seria una funcionalidad falsa que no persiste nada.
+// Matriz de solo lectura de permisos por rol (definidos en el backend)
 export function SettingsRolesPage(): JSX.Element {
   const navigate = useNavigate();
 

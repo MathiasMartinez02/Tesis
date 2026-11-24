@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, FileWarning, Package, PackageX, ClipboardCheck, CheckCheck, KeyRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { ROUTES } from '@/constants';
+import { ROUTES, buildRoute } from '@/constants';
 import type { Notification, NotificationType } from '@/types';
 import {
   useNotifications,
@@ -26,9 +26,25 @@ const NOTIFICATION_ICON_MAP: Record<NotificationType, { icon: typeof AlertTriang
   SolicitudCambioPassword: { icon: KeyRound, className: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
 };
 
-const NOTIFICATION_ROUTES: Partial<Record<NotificationType, string>> = {
-  SolicitudCambioPassword: ROUTES.SETTINGS_USERS,
-};
+// Pantalla a la que lleva cada notificacion segun su tipo y entidad relacionada
+function notificationRoute(notification: Notification): string | null {
+  const id = notification.relatedEntityId;
+  switch (notification.type) {
+    case 'InspeccionProxima':
+    case 'CertificadoPorVencer':
+      return id ? buildRoute(ROUTES.AIRCRAFT_DETAIL, { id }) : null;
+    case 'StockBajo':
+    case 'StockSobre':
+    case 'StockVencido':
+      return id ? buildRoute(ROUTES.INVENTORY_ITEM_DETAIL, { id }) : null;
+    case 'DocumentoPorVencer':
+      return ROUTES.TECHNICAL_DOCUMENTS;
+    case 'SolicitudCambioPassword':
+      return ROUTES.SETTINGS_USERS;
+    default:
+      return null;
+  }
+}
 
 interface NotificationItemProps {
   notification: Notification;
@@ -38,7 +54,7 @@ interface NotificationItemProps {
 
 // Notificacion individual: la marca como leida y, si tiene destino, navega
 function NotificationItem({ notification, onRead, onNavigate }: NotificationItemProps) {
-  const route = NOTIFICATION_ROUTES[notification.type];
+  const route = notificationRoute(notification);
   const { icon: Icon, className } = NOTIFICATION_ICON_MAP[notification.type] ?? {
     icon: AlertTriangle,
     className: 'text-surface-600 bg-surface-100',

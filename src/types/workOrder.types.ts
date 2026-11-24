@@ -164,7 +164,6 @@ export interface CreateWorkOrderTaskPayload {
   requiresInspection: boolean;
 }
 
-// Payload para dar de alta un material/repuesto pedido por una OT (Fase 8)
 /** Payload para POST /work-orders/{id}/documents */
 export interface CreateWorkOrderDocumentPayload {
   name: string;
@@ -172,6 +171,7 @@ export interface CreateWorkOrderDocumentPayload {
   fileUrl: string;
 }
 
+/** Payload para POST /work-orders/{id}/materials */
 export interface CreateWorkOrderMaterialPayload {
   partNumber: string;
   description: string;

@@ -23,6 +23,11 @@ export function useWorkOrders(filters: WorkOrderFilters = {}, page = 1, pageSize
   });
 }
 
+// Cantidad total de OT para un filtro (sin traer los registros)
+export function useWorkOrderCount(filters: WorkOrderFilters): number | undefined {
+  return useWorkOrders(filters, 1, 1).data?.total;
+}
+
 export function useWorkOrder(id: string) {
   return useQuery({
     queryKey: [...WORK_ORDERS_QUERY_KEY, id],
@@ -43,8 +48,8 @@ export function useCreateWorkOrder() {
       void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
       addToast({
         type: 'success',
-        title: 'OT creada',
-        description: `OT ${newOrder.number} creada correctamente`,
+        title: 'OT registrada',
+        description: `OT ${newOrder.number} registrada correctamente`,
       });
     },
     onError: (err: Error) => {
@@ -55,22 +60,20 @@ export function useCreateWorkOrder() {
 
 // ─── Update completo (campos + mecánicos diff) ────────────────────────────────
 
-// MODIFICADO: incluye intakeDate para poder editar la fecha de ingreso de la OT junto con el resto de los campos
-// ANTERIOR: solo tenía description, estimatedHours, estimatedEndDate y priority
-type UpdatePayload = {
+interface UpdatePayload {
   description: string;
   estimatedHours: number;
   intakeDate: string;
   estimatedEndDate: string;
   priority: WorkOrderPriority;
-};
+}
 
-type UpdateFullPayload = {
+interface UpdateFullPayload {
   id: string;
   payload: UpdatePayload;
   originalMechanicIds: string[];
   newMechanics: AssignedMechanic[];
-};
+}
 
 // Edicion de OT con alta y baja de mecanicos asignados
 export function useUpdateWorkOrderFull() {
@@ -104,24 +107,6 @@ export function useUpdateWorkOrderFull() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
-    },
-  });
-}
-
-export function useUpdateWorkOrder() {
-  const queryClient = useQueryClient();
-  const addToast = useUIStore((s) => s.addToast);
-
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdatePayload }) =>
-      workOrdersService.update(id, payload),
-    onSuccess: (_, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: [...WORK_ORDERS_QUERY_KEY, id] });
-      void queryClient.invalidateQueries({ queryKey: WORK_ORDERS_QUERY_KEY });
-      addToast({ type: 'success', title: 'OT actualizada' });
-    },
-    onError: (err: Error) => {
-      addToast({ type: 'error', title: 'Error al actualizar OT', description: err.message });
     },
   });
 }
@@ -194,7 +179,7 @@ export function useUpdateTaskStatus() {
   });
 }
 
-// Agrega un material/repuesto pedido a una OT (Fase 8: WorkOrderMaterial no tenia UI ni endpoint)
+// Agrega un material o repuesto pedido a una OT
 export function useAddWorkOrderMaterial() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);
@@ -212,7 +197,7 @@ export function useAddWorkOrderMaterial() {
   });
 }
 
-// Marca un material de OT como Entregado o No Disponible (Fase 8)
+// Marca un material de OT como Entregado o No disponible
 export function useUpdateMaterialStatus() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);

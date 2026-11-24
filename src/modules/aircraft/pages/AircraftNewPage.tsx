@@ -9,17 +9,10 @@ import { Input } from '@/shared/components/ui/Input';
 import { Select } from '@/shared/components/ui/Select';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
-import { ROUTES, buildRoute } from '@/constants';
+import { AIRCRAFT_CATEGORY_OPTIONS, ROUTES, buildRoute } from '@/constants';
 import type { SelectOption } from '@/types';
 import { useCreateAircraft } from '../hooks/useAircraft';
 import { useClients } from '@/modules/clients/hooks/useClients';
-
-const CATEGORY_OPTIONS: SelectOption[] = [
-  { value: 'Avion', label: 'Avión' },
-  { value: 'Helicoptero', label: 'Helicóptero' },
-  { value: 'Planeador', label: 'Planeador' },
-  { value: 'Ultraliviano', label: 'Ultraliviano' },
-];
 
 export function AircraftNewPage(): JSX.Element {
   const navigate = useNavigate();
@@ -48,7 +41,7 @@ export function AircraftNewPage(): JSX.Element {
     },
   });
 
-  // Antes simulaba el guardado con un setTimeout; ahora crea la aeronave con useCreateAircraft y navega a su detalle
+  // Registra la aeronave y navega a su detalle
   const onSubmit = async (data: AircraftFormData): Promise<void> => {
     const newAircraft = await createAircraft.mutateAsync(data);
     navigate(buildRoute(ROUTES.AIRCRAFT_DETAIL, { id: newAircraft.id }));
@@ -97,7 +90,7 @@ export function AircraftNewPage(): JSX.Element {
                 />
                 <Select
                   label="Categoría"
-                  options={CATEGORY_OPTIONS}
+                  options={AIRCRAFT_CATEGORY_OPTIONS}
                   error={errors.category?.message}
                   required
                   {...register('category')}

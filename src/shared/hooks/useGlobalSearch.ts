@@ -10,9 +10,7 @@ export interface GlobalSearchResult {
   subtitle: string;
 }
 
-// Busca en paralelo por matricula de aeronave, numero de OT y nombre de cliente contra los
-// endpoints ya existentes (Fase 8: alcance simple, sin motor de busqueda dedicado).
-// Se dispara solo con 2+ caracteres para no golpear los 3 endpoints en cada tecla del usuario.
+// Busqueda global en aeronaves, OT y clientes (desde 2 caracteres)
 export function useGlobalSearch(term: string) {
   const trimmed = term.trim();
 

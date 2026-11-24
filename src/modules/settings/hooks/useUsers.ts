@@ -12,14 +12,6 @@ export function useUsers(filters: UserFilters = {}, page = 1, pageSize = 10) {
   });
 }
 
-export function useUser(id: string) {
-  return useQuery({
-    queryKey: [...USERS_QUERY_KEY, id],
-    queryFn: () => usersService.getById(id),
-    enabled: !!id,
-  });
-}
-
 export function useCreateUser() {
   const queryClient = useQueryClient();
   const addToast = useUIStore((s) => s.addToast);
@@ -30,7 +22,7 @@ export function useCreateUser() {
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
       addToast({
         type: 'success',
-        title: 'Usuario creado',
+        title: 'Usuario registrado',
         description: `${user.firstName} ${user.lastName} registrado correctamente`,
       });
     },

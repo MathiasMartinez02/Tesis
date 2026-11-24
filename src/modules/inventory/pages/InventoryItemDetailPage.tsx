@@ -20,8 +20,6 @@ import { ROUTES, buildRoute, INVENTORY_CATEGORY_LABELS, MOVEMENT_TYPE_LABELS } f
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import type { InventoryMovement, TableColumn } from '@/types';
 
-// MODIFICADO: se convierte en una función que recibe los handlers de aprobación para agregar la columna "Aprobación"
-// ANTERIOR: era una constante de módulo sin columna de aprobación
 // Columnas de la tabla de historial de movimientos: tipo, cantidad, stock resultante, quien lo hizo, cuando y su estado de aprobación
 function buildMovementColumns(
   onApprove: (movementId: string) => void,
@@ -80,8 +78,6 @@ function buildMovementColumns(
             </span>
           );
         }
-        // MODIFICADO: el boton "Aprobar" ahora exige canManageInventory (mismo permiso que el backend valida en PATCH .../movements/{id}/approve)
-        // ANTERIOR: el boton era visible para cualquier usuario autenticado que abriera el detalle del item
         return (
           <RoleGuard permission="canManageInventory">
             <Button
@@ -100,8 +96,6 @@ function buildMovementColumns(
   ];
 }
 
-// MODIFICADO: agrega el modal de "Registrar Movimiento" y la aprobación de movimientos de Salida en la tabla de historial
-// ANTERIOR: solo mostraba el detalle del item con acciones de editar y eliminar, sin poder registrar ni aprobar movimientos
 // Muestra el detalle de un ítem de inventario junto a su historial de movimientos, con acciones de editar, eliminar, registrar movimientos y aprobar salidas
 export function InventoryItemDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -124,7 +118,7 @@ export function InventoryItemDetailPage(): JSX.Element {
     );
   }
 
-  // Pide confirmación antes de eliminar y navega al listado si la baja se concreta; si el backend rechaza por stock, el toast de error ya lo informa (ver useDeleteInventoryItem)
+  // Baja del item con confirmacion
   const handleDelete = (): void => {
     if (!window.confirm(`¿Eliminar el ítem ${item.partNumber} del pañol? Esta acción no se puede deshacer.`)) {
       return;
@@ -181,8 +175,6 @@ export function InventoryItemDetailPage(): JSX.Element {
           >
             Registrar Movimiento
           </Button>
-          {/* MODIFICADO: "Editar" (incluye edicion de costo unitario) y "Eliminar" ahora exigen canManageInventory, mismo permiso que el backend valida en PUT/DELETE /inventory/{id} */}
-          {/* ANTERIOR: ambos botones eran visibles para cualquier usuario autenticado */}
           <RoleGuard permission="canManageInventory">
             <Button
               variant="outline"

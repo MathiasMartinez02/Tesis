@@ -51,10 +51,7 @@ export function InventoryItemNewPage(): JSX.Element {
 
   const certRequired = watch('certificationRequired');
 
-  // MODIFICADO: la API siempre crea el ítem con currentStock = 0; si el usuario ingresó un stock inicial mayor a 0,
-  // se dispara automáticamente un movimiento de entrada por esa cantidad para que el alta se sienta como un solo paso.
-  // Si el movimiento falla se avisa con un toast de advertencia pero no se bloquea la navegación (el ítem ya se creó).
-  // ANTERIOR: enviaba el formulario al backend con useCreateInventoryItem y navegaba al listado al finalizar, sin cargar stock
+  // Registra el item y, si hay stock inicial, carga la entrada correspondiente
   const onSubmit = (data: InventoryItemFormData): void => {
     createItem(data, {
       onSuccess: (item) => {
@@ -73,7 +70,7 @@ export function InventoryItemNewPage(): JSX.Element {
               onError: (err: Error) => {
                 addToast({
                   type: 'warning',
-                  title: 'Ítem creado sin stock inicial',
+                  title: 'Ítem registrado sin stock inicial',
                   description: `El ítem se registró pero no se pudo cargar el stock inicial: ${err.message}`,
                 });
                 navigate(ROUTES.INVENTORY);

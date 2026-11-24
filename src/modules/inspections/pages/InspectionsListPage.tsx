@@ -11,6 +11,9 @@ import { buildRoute, ROUTES, getInspectionTypeLabel } from '@/constants';
 import { formatDate } from '@/lib/utils';
 import { useInspections } from '../hooks/useInspections';
 import type { Inspection, TableColumn } from '@/types';
+import { Pagination } from '@/shared/components/Pagination/Pagination';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 
 const COLUMNS: TableColumn<Inspection>[] = [
   {
@@ -68,22 +71,18 @@ const COLUMNS: TableColumn<Inspection>[] = [
   },
 ];
 
-// MODIFICADO: se quitó el botón "Nueva Inspección" porque el alta ahora se hace desde el detalle de la OT, no desde esta pantalla
-// ANTERIOR: el PageHeader incluía un botón "Nueva Inspección" que navegaba a ROUTES.INSPECTION_NEW
+const TABLE_PAGE_SIZE = 15;
+
+// Listado de inspecciones con busqueda y paginacion del servidor
 export function InspectionsListPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const { data: result, isLoading } = useInspections({ search }, 1, 50);
-
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
+  const { data: result, isLoading, isError, refetch } = useInspections({ search: debouncedSearch || undefined }, page, TABLE_PAGE_SIZE);
   const inspections = result?.data ?? [];
 
-  const filtered = search
-    ? inspections.filter(
-        (i) =>
-          i.aircraftRegistration.toLowerCase().includes(search.toLowerCase()) ||
-          i.workOrderNumber.toLowerCase().includes(search.toLowerCase())
-      )
-    : inspections;
+  if (isError) return <ErrorState title="Error al cargar inspecciones" onRetry={() => void refetch()} />;
 
   return (
     <motion.div
@@ -94,19 +93,22 @@ export function InspectionsListPage(): JSX.Element {
     >
       <PageHeader
         title="Inspecciones"
-        description={`${filtered.length} inspecciones en el sistema`}
+        description={`${result?.total ?? 0} inspecciones en el sistema`}
       />
 
       <div className="flex items-center gap-3">
         <SearchInput
           value={search}
-          onChange={setSearch}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
           placeholder="Buscar por matrícula o N° OT..."
           className="w-72"
         />
       </div>
 
-      {!isLoading && filtered.length === 0 ? (
+      {!isLoading && inspections.length === 0 ? (
         <EmptyState
           icon={CheckSquare}
           title="Sin inspecciones"
@@ -114,11 +116,16 @@ export function InspectionsListPage(): JSX.Element {
         />
       ) : (
         <DataTable<Inspection>
-          data={filtered}
+          data={inspections}
           columns={COLUMNS}
+          isLoading={isLoading}
           onRowClick={(row) => navigate(buildRoute(ROUTES.INSPECTION_DETAIL, { id: row.id }))}
           emptyMessage="Sin inspecciones"
         />
+      )}
+
+      {result && (
+        <Pagination page={page} pageSize={TABLE_PAGE_SIZE} total={result.total} totalPages={result.totalPages} onPageChange={setPage} />
       )}
     </motion.div>
   );

@@ -43,8 +43,7 @@
       "@store/*": ["./src/store/*"],
       "@styles/*": ["./src/styles/*"],
       "@types/*": ["./src/types/*"],
-      "@utils/*": ["./src/utils/*"],
-      "@mocks/*": ["./src/mocks/*"]
+      "@utils/*": ["./src/utils/*"]
     }
   },
   "include": ["src"],

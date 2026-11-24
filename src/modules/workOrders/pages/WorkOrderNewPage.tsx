@@ -48,7 +48,7 @@ export function WorkOrderNewPage(): JSX.Element {
     },
   });
 
-  // Antes simulaba el guardado con un setTimeout; ahora crea la OT con useCreateWorkOrder y navega a su detalle
+  // Registra la OT y navega a su detalle
   const onSubmit = async (data: WorkOrderFormData): Promise<void> => {
     const newOrder = await createWorkOrder.mutateAsync(data);
     navigate(buildRoute(ROUTES.WORK_ORDER_DETAIL, { id: newOrder.id }));
@@ -187,7 +187,7 @@ export function WorkOrderNewPage(): JSX.Element {
               isLoading={isSubmitting || createWorkOrder.isPending}
               leftIcon={<Save size={15} />}
             >
-              Crear OT
+              Registrar OT
             </Button>
           </div>
         </div>

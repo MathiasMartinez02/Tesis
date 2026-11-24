@@ -12,17 +12,9 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Ca
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { PageLoader } from '@/shared/components/PageLoader/PageLoader';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
-import { ROUTES, buildRoute } from '@/constants';
+import { AIRCRAFT_CATEGORY_OPTIONS, ROUTES, buildRoute } from '@/constants';
 import { toDateInput } from '@/lib/utils';
-import type { SelectOption } from '@/types';
 import { useAircraftById, useUpdateAircraft } from '../hooks/useAircraft';
-
-const CATEGORY_OPTIONS: SelectOption[] = [
-  { value: 'Avion', label: 'Avión' },
-  { value: 'Helicoptero', label: 'Helicóptero' },
-  { value: 'Planeador', label: 'Planeador' },
-  { value: 'Ultraliviano', label: 'Ultraliviano' },
-];
 
 // Página de edición de una aeronave existente: precarga sus datos y guarda los cambios con useUpdateAircraft
 export function AircraftEditPage(): JSX.Element {
@@ -111,7 +103,7 @@ export function AircraftEditPage(): JSX.Element {
                 <Input label="Matrícula" value={aircraft.registration} disabled readOnly />
                 <Select
                   label="Categoría"
-                  options={CATEGORY_OPTIONS}
+                  options={AIRCRAFT_CATEGORY_OPTIONS}
                   error={errors.category?.message}
                   required
                   {...register('category')}

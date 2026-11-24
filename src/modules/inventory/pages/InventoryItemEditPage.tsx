@@ -31,8 +31,6 @@ export function InventoryItemEditPage(): JSX.Element {
     resolver: zodResolver(inventoryItemEditSchema),
   });
 
-  // MODIFICADO: incluye maximumStock al precargar el formulario con los datos del item
-  // ANTERIOR: solo precargaba description, location, minimumStock, unitCost, certificateNumber, expiryDate
   useEffect(() => {
     if (item) {
       reset({

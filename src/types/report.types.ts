@@ -44,8 +44,6 @@ export interface InspectionReportFilters {
   inspectorId?: string;
 }
 
-// MODIFICADO: se tipa `inspections` como `Inspection[]` (antes `unknown[]`) y se agregan los campos de cumplimiento normativo (completedCount/onTimeCount/compliancePercentage)
-// ANTERIOR: solo inspections (unknown[]), totalCount, byStatus, byType
 export interface InspectionsReport {
   inspections: Inspection[];
   totalCount: number;

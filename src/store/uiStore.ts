@@ -94,6 +94,3 @@ export const useUIStore = create<UIStore>()(
 );
 
 /** Selector helpers */
-export const selectSidebarCollapsed = (state: UIStore): boolean => state.sidebarCollapsed;
-export const selectTheme = (state: UIStore): Theme => state.theme;
-export const selectToasts = (state: UIStore): Toast[] => state.toasts;

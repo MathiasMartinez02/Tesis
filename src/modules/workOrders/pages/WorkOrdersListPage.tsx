@@ -9,7 +9,7 @@ import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { StatusBadge } from '@/shared/components/StatusBadge/StatusBadge';
 import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 import { WorkOrderFiltersPanel } from '../components/WorkOrderFiltersPanel';
-import { useWorkOrders } from '../hooks/useWorkOrders';
+import { useWorkOrders, useWorkOrderCount } from '../hooks/useWorkOrders';
 import {
   buildRoute,
   ROUTES,
@@ -20,6 +20,9 @@ import {
 import type { WorkOrder, WorkOrderFilters, TableColumn } from '@/types';
 import { formatDate, downloadCsv, todayLocal } from '@/lib/utils';
 import { RoleGuard } from '@/routes/RoleGuard';
+import { Pagination } from '@/shared/components/Pagination/Pagination';
+import { workOrdersService } from '@/services/api/workOrders.service';
+import { useUIStore } from '@/store/uiStore';
 
 const COLUMNS: TableColumn<WorkOrder>[] = [
   {
@@ -103,8 +106,6 @@ const COLUMNS: TableColumn<WorkOrder>[] = [
 
 const EMPTY_FILTERS: WorkOrderFilters = {};
 
-// MODIFICADO: usa el helper compartido `downloadCsv` (lib/utils) en lugar de armar el CSV a mano
-// ANTERIOR: definía su propio `csvEscape` local y armaba el blob/descarga manualmente
 // Genera un CSV con las columnas visibles del listado (numero, tipo, aeronave, cliente, estado, prioridad, ingreso, límite) y lo descarga en el navegador
 function exportWorkOrdersToCsv(orders: WorkOrder[]): void {
   const headers = [
@@ -130,14 +131,18 @@ function exportWorkOrdersToCsv(orders: WorkOrder[]): void {
   downloadCsv(`ordenes-de-trabajo-${todayLocal()}.csv`, headers, rows);
 }
 
-// MODIFICADO: agrega contadores de Pendientes/En proceso/Finalizadas sobre los datos cargados y conecta el botón Exportar a una descarga CSV del lado del cliente
-// ANTERIOR: no tenía contadores y el botón Exportar no tenía onClick
+// Listado de OT con contadores globales por estado y exportacion de todo el filtro
 export function WorkOrdersListPage(): JSX.Element {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<WorkOrderFilters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
+  const addToast = useUIStore((s) => s.addToast);
 
   const { data, isLoading, isError, refetch } = useWorkOrders(filters, page);
+  const pendingCount = useWorkOrderCount({ status: 'Pendiente' }) ?? 0;
+  const inProgressCount = useWorkOrderCount({ status: 'EnProceso' }) ?? 0;
+  const completedCount = useWorkOrderCount({ status: 'Finalizada' }) ?? 0;
 
   const handleRowClick = (row: WorkOrder): void => {
     navigate(buildRoute(ROUTES.WORK_ORDER_DETAIL, { id: row.id }));
@@ -152,15 +157,17 @@ export function WorkOrdersListPage(): JSX.Element {
     setPage(1); // Reset paginación al filtrar
   };
 
-  // Descarga un CSV con las OT actualmente cargadas (respetando los filtros aplicados)
-  const handleExport = (): void => {
-    exportWorkOrdersToCsv(data?.data ?? []);
+  // Descarga un CSV con todas las OT del filtro actual, no solo la pagina visible
+  const handleExport = async (): Promise<void> => {
+    setIsExporting(true);
+    try {
+      exportWorkOrdersToCsv(await workOrdersService.getAllMatching(filters));
+    } catch (err) {
+      addToast({ type: 'error', title: 'No se pudo exportar', description: (err as Error).message });
+    } finally {
+      setIsExporting(false);
+    }
   };
-
-  const orders = data?.data ?? [];
-  const pendingCount = orders.filter((o) => o.status === 'Pendiente').length;
-  const inProgressCount = orders.filter((o) => o.status === 'EnProceso').length;
-  const completedCount = orders.filter((o) => o.status === 'Finalizada').length;
 
   if (isError) {
     return (
@@ -187,7 +194,8 @@ export function WorkOrdersListPage(): JSX.Element {
               variant="outline"
               size="sm"
               leftIcon={<Download size={15} />}
-              onClick={handleExport}
+              isLoading={isExporting}
+              onClick={() => void handleExport()}
             >
               Exportar
             </Button>
@@ -240,31 +248,8 @@ export function WorkOrdersListPage(): JSX.Element {
         stickyHeader
       />
 
-      {/* Paginación simple */}
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-surface-500">
-          <span>
-            Mostrando {(page - 1) * 10 + 1}–{Math.min(page * 10, data.total)} de {data.total}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page === 1}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page === data.totalPages}
-            >
-              Siguiente
-            </Button>
-          </div>
-        </div>
+      {data && (
+        <Pagination page={page} pageSize={10} total={data.total} totalPages={data.totalPages} onPageChange={setPage} />
       )}
     </motion.div>
   );

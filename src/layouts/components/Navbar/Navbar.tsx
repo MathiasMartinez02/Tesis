@@ -12,9 +12,7 @@ import { NotificationsPanel } from '@/modules/notifications/components/Notificat
 import { useLogout } from '@/modules/auth/hooks/useLogout';
 import { GlobalSearchPanel } from './GlobalSearchPanel';
 
-// MODIFICADO (Fase 8): el boton de busqueda ahora abre GlobalSearchPanel (antes solo togleaba un estado sin
-// ningun efecto visible) y "Mi Perfil" navega a ROUTES.PROFILE (antes era un boton sin onClick).
-// ANTERIOR: agrega estado para el panel de notificaciones y el contador de no leidas
+// Barra superior: breadcrumbs, busqueda, notificaciones y menu de usuario
 export function Navbar(): JSX.Element {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -110,7 +108,7 @@ export function Navbar(): JSX.Element {
             {!!unreadCount?.count && unreadCount.count > 0 && (
               <span
                 className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
-                aria-label={`Tienes ${unreadCount.count} notificaciones sin leer`}
+                aria-label={`Tenés ${unreadCount.count} notificaciones sin leer`}
               >
                 {unreadCount.count > 99 ? '99+' : unreadCount.count}
               </span>

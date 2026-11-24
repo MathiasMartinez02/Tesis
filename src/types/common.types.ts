@@ -41,6 +41,4 @@ export interface SortConfig {
   direction: 'asc' | 'desc';
 }
 
-export interface FilterConfig {
-  [key: string]: string | number | boolean | undefined;
-}
+export type FilterConfig = Record<string, string | number | boolean | undefined>;

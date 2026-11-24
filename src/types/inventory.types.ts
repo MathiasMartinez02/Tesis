@@ -7,8 +7,6 @@ export type InventoryCategory =
   | 'Instrumento'
   | 'Avionico';
 
-// MODIFICADO: se agrega 'SobreStock' para el caso en que el stock actual supera el stock maximo definido
-// ANTERIOR: 'Disponible' | 'Reservado' | 'BajoStock' | 'SinStock' | 'Vencido'
 export type InventoryStatus = 'Disponible' | 'Reservado' | 'BajoStock' | 'SinStock' | 'Vencido' | 'SobreStock';
 
 export type MovementType = 'Entrada' | 'Salida' | 'Reserva' | 'Devolucion' | 'Ajuste';
@@ -34,8 +32,6 @@ export interface InventoryItem {
   createdAt: string;
 }
 
-// MODIFICADO: se agregan approvedById/approvedByName (opcionales) para reflejar la aprobacion de movimientos de tipo Salida
-// ANTERIOR: no incluia informacion de aprobacion
 /** InventoryMovementDto */
 export interface InventoryMovement {
   id: string;

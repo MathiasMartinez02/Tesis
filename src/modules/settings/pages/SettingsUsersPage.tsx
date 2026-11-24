@@ -13,6 +13,11 @@ import { useUsers, useSetUserActive } from '../hooks/useUsers';
 import { UserFormModal } from '../components/UserFormModal';
 import { ResetUserPasswordModal } from '../components/ResetUserPasswordModal';
 import type { User, UserRole } from '@/types';
+import { Pagination } from '@/shared/components/Pagination/Pagination';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
+
+const TABLE_PAGE_SIZE = 15;
 
 // Gestion de usuarios: alta, edicion, activacion y contraseña asignada por el gerente
 export function SettingsUsersPage(): JSX.Element {
@@ -22,9 +27,13 @@ export function SettingsUsersPage(): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [passwordUser, setPasswordUser] = useState<User | null>(null);
 
-  const { data: result, isLoading } = useUsers({ search: search || undefined }, 1, 100);
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
+  const { data: result, isLoading, isError, refetch } = useUsers({ search: debouncedSearch || undefined }, page, TABLE_PAGE_SIZE);
   const { mutate: setActive, isPending: isTogglingActive } = useSetUserActive();
   const users = result?.data ?? [];
+
+  if (isError) return <ErrorState title="Error al cargar usuarios" onRetry={() => void refetch()} />;
 
   const openCreateModal = (): void => {
     setEditingUser(null);
@@ -58,7 +67,10 @@ export function SettingsUsersPage(): JSX.Element {
       <div className="flex items-center justify-between gap-3">
         <SearchInput
           value={search}
-          onChange={setSearch}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
           placeholder="Buscar por nombre o email..."
           className="max-w-sm"
         />
@@ -140,6 +152,10 @@ export function SettingsUsersPage(): JSX.Element {
           </div>
         )}
       </Card>
+
+      {result && (
+        <Pagination page={page} pageSize={TABLE_PAGE_SIZE} total={result.total} totalPages={result.totalPages} onPageChange={setPage} />
+      )}
 
       <UserFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={editingUser} />
       <ResetUserPasswordModal user={passwordUser} onClose={() => setPasswordUser(null)} />

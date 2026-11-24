@@ -69,7 +69,6 @@ export const useAuthStore = create<AuthStore>()(
 /** Selector helpers para evitar re-renders innecesarios */
 export const selectUser = (state: AuthStore): AuthUser | null => state.user;
 export const selectIsAuthenticated = (state: AuthStore): boolean => state.isAuthenticated;
-export const selectUserRole = (state: AuthStore) => state.user?.role;
 
 /**
  * Devuelve los permisos efectivos del usuario.

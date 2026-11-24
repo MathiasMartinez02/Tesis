@@ -23,8 +23,7 @@ export function ClientNewPage(): JSX.Element {
     resolver: zodResolver(clientSchema),
   });
 
-  // MODIFICADO: envia el formulario al backend con useCreateClient y navega al listado al finalizar
-  // ANTERIOR: simulaba el guardado con un setTimeout y navegaba sin persistir datos
+  // Registra el cliente y vuelve al listado
   const onSubmit = (data: ClientFormData): void => {
     createClient(data, {
       onSuccess: () => navigate(ROUTES.CLIENTS),

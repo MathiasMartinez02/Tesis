@@ -7,9 +7,7 @@ import { ROLE_LABELS } from '@/constants';
 import { formatDateTime, getInitials } from '@/lib/utils';
 import { ChangePasswordCard } from '../components/ChangePasswordCard';
 
-// Pagina de perfil del usuario logueado (Fase 8): antes el boton "Mi Perfil" del Navbar no navegaba a ningun lado.
-// Muestra los datos propios del usuario (nombre, email, rol, licencia si tiene, ultimo login) y reusa
-// ChangePasswordCard (ya creada en la Fase 7 para SettingsPage) para permitir el cambio de contraseña propia.
+// Perfil del usuario logueado con cambio de contraseña propia
 export function ProfilePage(): JSX.Element {
   const user = useAuthStore(selectUser);
 

@@ -13,15 +13,6 @@ export function useTechnicalDocuments(filters: TechnicalDocumentFilters = {}, pa
   });
 }
 
-// Trae el detalle de un documento técnico puntual por id
-export function useTechnicalDocument(id: string) {
-  return useQuery({
-    queryKey: [...TECHNICAL_DOCUMENTS_QUERY_KEY, id],
-    queryFn: () => technicalDocumentsService.getById(id),
-    enabled: !!id,
-  });
-}
-
 // Trae los documentos técnicos por vencer (ventana de 30 días), para el indicador de "por vencer" del listado
 export function useExpiringTechnicalDocuments() {
   return useQuery({

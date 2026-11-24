@@ -13,9 +13,10 @@ import { useInventory } from '../hooks/useInventory';
 import { ROUTES, INVENTORY_CATEGORY_LABELS, buildRoute } from '@/constants';
 import { formatCurrency } from '@/lib/utils';
 import type { InventoryItem, TableColumn } from '@/types';
+import { Pagination } from '@/shared/components/Pagination/Pagination';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 
-// MODIFICADO: el boton "Editar" (incluye edicion de costo unitario) ahora exige canManageInventory, igual que en InventoryItemDetailPage
-// ANTERIOR: el boton era visible para cualquier usuario autenticado, sin chequeo de permiso
 // Recibe la función de navegación para poder ir a la edición sin propagar el click al row (que navega al detalle)
 function buildColumns(navigate: (path: string) => void): TableColumn<InventoryItem>[] {
   return [
@@ -107,25 +108,19 @@ const BASE_COLUMNS: TableColumn<InventoryItem>[] = [
   },
 ];
 
-// MODIFICADO: agrega navegación al detalle al hacer click en una fila y un botón "Editar" directo por fila
-// ANTERIOR: la tabla solo mostraba los datos, sin navegación ni acciones por fila
+const TABLE_PAGE_SIZE = 15;
+
+// Listado del pañol con stock critico calculado sobre todo el inventario
 export function InventoryListPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const { data: result, isLoading } = useInventory({ search }, 1, 50);
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
+  const { data: result, isLoading, isError, refetch } = useInventory({ search: debouncedSearch || undefined }, page, TABLE_PAGE_SIZE);
+  const { data: lowStock } = useInventory({ lowStock: true }, 1, 1);
+  const lowStockCount = lowStock?.total ?? 0;
 
-  const items = result?.data ?? [];
-  const lowStockCount = items.filter(
-    (i) => i.status === 'BajoStock' || i.status === 'SinStock'
-  ).length;
-
-  const filtered = search
-    ? items.filter(
-        (item) =>
-          item.description.toLowerCase().includes(search.toLowerCase()) ||
-          item.partNumber.toLowerCase().includes(search.toLowerCase())
-      )
-    : items;
+  if (isError) return <ErrorState title="Error al cargar el inventario" onRetry={() => void refetch()} />;
 
   // Navega al detalle del ítem al hacer click en una fila de la tabla
   const handleRowClick = (row: InventoryItem): void => {
@@ -145,7 +140,7 @@ export function InventoryListPage(): JSX.Element {
         actions={
           <RoleGuard permission="canManageInventory">
             <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.INVENTORY_ITEM_NEW)}>
-              Registrar ítem
+              Registrar Ítem
             </Button>
           </RoleGuard>
         }
@@ -185,21 +180,27 @@ export function InventoryListPage(): JSX.Element {
       <div>
         <SearchInput
           value={search}
-          onChange={setSearch}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
           placeholder="Buscar por N° parte o descripción..."
           className="w-80"
         />
       </div>
 
       {/* Tabla */}
-      {!isLoading && (
-        <DataTable<InventoryItem>
-          data={filtered}
-          columns={buildColumns(navigate)}
-          onRowClick={handleRowClick}
-          emptyMessage="Sin ítems en inventario"
-          emptyDescription="No hay ítems que coincidan con la búsqueda."
-        />
+      <DataTable<InventoryItem>
+        data={result?.data ?? []}
+        columns={buildColumns(navigate)}
+        isLoading={isLoading}
+        onRowClick={handleRowClick}
+        emptyMessage="Sin ítems en inventario"
+        emptyDescription="No hay ítems que coincidan con la búsqueda."
+      />
+
+      {result && (
+        <Pagination page={page} pageSize={TABLE_PAGE_SIZE} total={result.total} totalPages={result.totalPages} onPageChange={setPage} />
       )}
     </motion.div>
   );

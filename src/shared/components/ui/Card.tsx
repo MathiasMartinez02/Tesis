@@ -31,7 +31,7 @@ export function Card({
   );
 }
 
-interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
+type CardHeaderProps = HTMLAttributes<HTMLDivElement>;
 
 export function CardHeader({ className, children, ...props }: CardHeaderProps): JSX.Element {
   return (
@@ -47,7 +47,7 @@ export function CardHeader({ className, children, ...props }: CardHeaderProps): 
   );
 }
 
-interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
+type CardTitleProps = HTMLAttributes<HTMLHeadingElement>;
 
 export function CardTitle({ className, children, ...props }: CardTitleProps): JSX.Element {
   return (
@@ -60,7 +60,7 @@ export function CardTitle({ className, children, ...props }: CardTitleProps): JS
   );
 }
 
-interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {}
+type CardBodyProps = HTMLAttributes<HTMLDivElement>;
 
 export function CardBody({ className, children, ...props }: CardBodyProps): JSX.Element {
   return (

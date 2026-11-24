@@ -138,7 +138,6 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Documentación',
     items: [
       {
-        // Fase 4: repositorio general de manuales/boletines/directivas AD, protegido con el mismo permiso que ya usa "Subir documento" en Aeronaves
         id: 'technical-documents',
         label: 'Documentación Técnica',
         icon: FileText,

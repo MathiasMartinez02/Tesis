@@ -13,7 +13,7 @@ interface AddTaskModalProps {
   workOrderId: string;
 }
 
-// Modal para agregar una tarea nueva a una OT existente (Fase 8: la UI faltaba, el hook ya existia)
+// Modal para agregar una tarea a una OT
 export function AddTaskModal({ isOpen, onClose, workOrderId }: AddTaskModalProps): JSX.Element {
   const { mutate: addTask, isPending } = useAddWorkOrderTask();
 

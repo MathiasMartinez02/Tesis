@@ -8,6 +8,7 @@ interface SearchInputProps {
   className?: string;
 }
 
+// Campo de busqueda con boton para limpiar
 export function SearchInput({
   value,
   onChange,
@@ -36,6 +37,7 @@ export function SearchInput({
       />
       {value && (
         <button
+          type="button"
           onClick={() => onChange('')}
           aria-label="Limpiar búsqueda"
           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600"

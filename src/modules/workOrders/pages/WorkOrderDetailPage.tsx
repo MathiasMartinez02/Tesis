@@ -46,7 +46,7 @@ import {
 import { formatDate, formatDateTime, formatFlightHours } from '@/lib/utils';
 import type { WorkOrder, WorkOrderMaterialStatus } from '@/types';
 
-// Labels/colores para el estado de un material de OT (Fase 8: seccion de Materiales nueva)
+// Etiquetas y colores del estado de un material de OT
 const MATERIAL_STATUS_LABELS: Record<WorkOrderMaterialStatus, string> = {
   Pendiente: 'Pendiente',
   Entregado: 'Entregado',
@@ -123,7 +123,7 @@ export function WorkOrderDetailPage(): JSX.Element {
       className="space-y-5"
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -145,7 +145,7 @@ export function WorkOrderDetailPage(): JSX.Element {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {!isClosed && (
             <RoleGuard permission="canManageWorkOrders">
               <Button

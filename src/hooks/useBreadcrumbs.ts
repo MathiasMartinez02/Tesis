@@ -13,6 +13,8 @@ const ROUTE_LABELS: Record<string, string> = {
   nuevo: 'Registrar',
   editar: 'Editar',
   'turnos': 'Turnos',
+  'presupuestos': 'Presupuestos',
+  'documentacion-tecnica': 'Documentación Técnica',
   'aeronaves': 'Aeronaves',
   'clientes': 'Clientes',
   'inspecciones': 'Inspecciones',
@@ -22,7 +24,6 @@ const ROUTE_LABELS: Record<string, string> = {
   'configuracion': 'Configuración',
   'usuarios': 'Usuarios',
   'roles': 'Roles',
-  'sistema': 'Sistema',
   'mi-perfil': 'Mi Perfil',
 };
 

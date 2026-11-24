@@ -28,9 +28,7 @@ const RESULT_ROUTE: Record<GlobalSearchResult['type'], string> = {
   client: ROUTES.CLIENT_DETAIL,
 };
 
-// Panel de busqueda global del Navbar (Fase 8): antes el boton solo togleaba un estado sin ningun
-// efecto visible. Busca en paralelo por matricula de aeronave, numero de OT y nombre de cliente
-// contra los endpoints ya existentes (useGlobalSearch), sin motor de busqueda dedicado.
+// Panel de busqueda global por matricula, numero de OT y cliente
 export function GlobalSearchPanel({ isOpen, onClose }: GlobalSearchPanelProps): JSX.Element {
   const [term, setTerm] = useState('');
   const navigate = useNavigate();

@@ -9,11 +9,14 @@ import { EmptyState } from '@/shared/components/EmptyState/EmptyState';
 import { Spinner } from '@/shared/components/ui/Spinner';
 import { ROUTES, buildRoute } from '@/constants';
 import { useClients } from '../hooks/useClients';
-import type { Client, ClientFilters } from '@/types';
+import type { Client } from '@/types';
 import { RoleGuard } from '@/routes/RoleGuard';
+import { Pagination } from '@/shared/components/Pagination/Pagination';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { clickableProps } from '@/lib/a11y';
+import { ErrorState } from '@/shared/components/ErrorState/ErrorState';
 
-// MODIFICADO: agrega navegacion al detalle del cliente al hacer click en la tarjeta y un boton "Editar" que va directo a CLIENT_EDIT sin pasar por el detalle
-// ANTERIOR: la tarjeta no tenia onClick ni boton de edicion, solo mostraba los datos
+// Tarjeta de cliente: abre el detalle y permite editar
 function ClientCard({ client }: { client: Client }): JSX.Element {
   const navigate = useNavigate();
 
@@ -23,8 +26,9 @@ function ClientCard({ client }: { client: Client }): JSX.Element {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
-      onClick={() => navigate(buildRoute(ROUTES.CLIENT_DETAIL, { id: client.id }))}
-      className="cursor-pointer rounded-xl border border-surface-200 bg-white p-5 shadow-card transition-shadow hover:shadow-card-hover dark:border-surface-700 dark:bg-surface-800"
+      {...clickableProps(() => navigate(buildRoute(ROUTES.CLIENT_DETAIL, { id: client.id })))}
+      aria-label={`Cliente ${client.name}`}
+      className="cursor-pointer rounded-xl border border-surface-200 bg-white p-5 shadow-card outline-none transition-shadow hover:shadow-card-hover focus-visible:ring-2 focus-visible:ring-aviation-500 dark:border-surface-700 dark:bg-surface-800"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -76,21 +80,19 @@ function ClientCard({ client }: { client: Client }): JSX.Element {
   );
 }
 
+const CARDS_PAGE_SIZE = 12;
+
+// Listado de clientes con busqueda y paginacion del servidor
 export function ClientsListPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<ClientFilters>({});
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
 
-  const { data: result, isLoading } = useClients(filters, 1, 50);
+  const { data: result, isLoading, isError, refetch } = useClients({ search: debouncedSearch || undefined }, page, CARDS_PAGE_SIZE);
   const clients = result?.data ?? [];
 
-  const filtered = search
-    ? clients.filter(
-        (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.taxId.includes(search)
-      )
-    : clients;
+  if (isError) return <ErrorState title="Error al cargar clientes" onRetry={() => void refetch()} />;
 
   return (
     <motion.div
@@ -105,7 +107,7 @@ export function ClientsListPage(): JSX.Element {
         actions={
           <RoleGuard permission="canManageClients">
             <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => navigate(ROUTES.CLIENT_NEW)}>
-              Registrar cliente
+              Registrar Cliente
             </Button>
           </RoleGuard>
         }
@@ -115,7 +117,7 @@ export function ClientsListPage(): JSX.Element {
         value={search}
         onChange={(v) => {
           setSearch(v);
-          setFilters((f) => ({ ...f, search: v || undefined }));
+          setPage(1);
         }}
         placeholder="Buscar por nombre o CUIT..."
         className="w-72"
@@ -125,7 +127,7 @@ export function ClientsListPage(): JSX.Element {
         <div className="flex h-40 items-center justify-center">
           <Spinner size="lg" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : clients.length === 0 ? (
         <EmptyState
           icon={Users}
           title="Sin clientes"
@@ -133,10 +135,14 @@ export function ClientsListPage(): JSX.Element {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((client) => (
+          {clients.map((client) => (
             <ClientCard key={client.id} client={client} />
           ))}
         </div>
+      )}
+
+      {result && (
+        <Pagination page={page} pageSize={CARDS_PAGE_SIZE} total={result.total} totalPages={result.totalPages} onPageChange={setPage} />
       )}
     </motion.div>
   );

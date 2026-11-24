@@ -6,12 +6,6 @@ import { Card } from '@/shared/components/ui/Card';
 import { ROUTES } from '@/constants';
 import { ChangePasswordCard } from '../components/ChangePasswordCard';
 
-// MODIFICADO: se quita la tarjeta "Parámetros del Sistema" (antes tercera tarjeta, con id 'system') y se agrega navegación real a las otras dos.
-// ANTERIOR: las 3 tarjetas eran botones decorativos sin onClick, ninguna navegaba a ningún lado (las rutas SETTINGS_USERS/SETTINGS_ROLES/SETTINGS_SYSTEM
-// estaban definidas en constants/routes.ts pero no montadas en AppRouter.tsx).
-// Decision de diseño (Fase 7): no se crea SettingsSystemPage porque hoy no existe ninguna entidad ni endpoint de "parametros del sistema" en el backend
-// (no hay casos de uso reales que mostrar) — armar una pantalla ahora seria UI decorativa sin datos, lo que el criterio de salida de esta fase pide evitar.
-// Se documenta esta decision en PLAN_ANALISIS_FUNCIONAL.md, seccion Fase 7.
 const CONFIG_SECTIONS = [
   {
     id: 'users',
@@ -33,9 +27,7 @@ const CONFIG_SECTIONS = [
   },
 ];
 
-// MODIFICADO: la lista cruda de usuarios se movio a SettingsUsersPage (pagina dedicada, con alta/edicion/activacion real);
-// aca queda solo el hub de navegacion (tarjetas) mas la tarjeta de cambio de contraseña propia.
-// ANTERIOR: esta pagina renderizaba directamente el listado de usuarios de solo lectura via useUsers()
+// Configuracion: accesos a Usuarios y Roles y cambio de contraseña propia
 export function SettingsPage(): JSX.Element {
   const navigate = useNavigate();
 

@@ -30,7 +30,7 @@ export function useCreateClient() {
       void queryClient.invalidateQueries({ queryKey: CLIENTS_QUERY_KEY });
       addToast({
         type: 'success',
-        title: 'Cliente creado',
+        title: 'Cliente registrado',
         description: `${client.name} registrado correctamente`,
       });
     },

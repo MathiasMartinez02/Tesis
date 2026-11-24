@@ -17,5 +17,4 @@ export const ENV = {
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,
   ENABLE_DEVTOOLS: getEnvVar('VITE_ENABLE_DEVTOOLS', 'true') === 'true',
-  ENABLE_MOCK_API: getEnvVar('VITE_ENABLE_MOCK_API', 'true') === 'true',
 } as const;

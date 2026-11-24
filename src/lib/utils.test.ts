@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { afterEach, vi } from 'vitest';
-import { csvEscape, formatFlightHours, getInitials, toDateInput, todayLocal, truncate } from './utils';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { csvEscape, daysUntil, describeExpiry, formatFlightHours, getInitials, toDateInput, todayLocal, truncate } from './utils';
 
 describe('todayLocal', () => {
   afterEach(() => {
@@ -31,16 +30,31 @@ describe('csvEscape', () => {
     expect(csvEscape('LV-ABC')).toBe('LV-ABC');
   });
 
-  it('encierra entre comillas un valor con coma', () => {
-    expect(csvEscape('Cordoba, Argentina')).toBe('"Cordoba, Argentina"');
+  it('con separador ; la coma no necesita comillas', () => {
+    expect(csvEscape('Cordoba, Argentina')).toBe('Cordoba, Argentina');
+  });
+
+  it('encierra entre comillas un valor con punto y coma', () => {
+    expect(csvEscape('Filtro; aceite')).toBe('"Filtro; aceite"');
   });
 
   it('duplica las comillas internas', () => {
     expect(csvEscape('Motor "Lycoming"')).toBe('"Motor ""Lycoming"""');
   });
 
-  it('encierra entre comillas un valor con salto de linea', () => {
+  it('encierra entre comillas un valor con saltos de linea', () => {
     expect(csvEscape('linea 1\nlinea 2')).toBe('"linea 1\nlinea 2"');
+    expect(csvEscape('linea 1\r\nlinea 2')).toBe('"linea 1\r\nlinea 2"');
+  });
+
+  it('neutraliza formulas para que Excel no las ejecute', () => {
+    expect(csvEscape('=HYPERLINK("http://x")')).toBe('"\'=HYPERLINK(""http://x"")"');
+    expect(csvEscape('@SUM(A1)')).toBe("'@SUM(A1)");
+  });
+
+  it('no toca los numeros negativos', () => {
+    expect(csvEscape('-5')).toBe('-5');
+    expect(csvEscape('-1,5')).toBe('-1,5');
   });
 });
 
@@ -51,6 +65,27 @@ describe('formatFlightHours', () => {
 
   it('muestra horas y minutos', () => {
     expect(formatFlightHours(1.5)).toBe('1h 30m');
+  });
+
+  it('redondea al minuto sin mostrar 60 minutos', () => {
+    expect(formatFlightHours(1.999)).toBe('2h');
+  });
+});
+
+describe('daysUntil y describeExpiry', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('cuenta dias de calendario aunque falten pocas horas', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 20, 15, 0));
+
+    expect(daysUntil('2026-11-21T00:00:00')).toBe(1);
+    expect(describeExpiry('2026-11-21T00:00:00')).toBe('vence mañana');
+    expect(describeExpiry('2026-11-20T00:00:00')).toBe('vence hoy');
+    expect(describeExpiry('2026-11-15T00:00:00')).toBe('venció hace 5 días');
+    expect(describeExpiry('2026-12-20T00:00:00')).toBe('vence en 30 días');
   });
 });
 

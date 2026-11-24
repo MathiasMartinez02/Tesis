@@ -130,7 +130,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps): JS
               void handleSubmit(onSubmit)();
             }}
           >
-            {isEditMode ? 'Guardar cambios' : 'Crear usuario'}
+            {isEditMode ? 'Guardar cambios' : 'Registrar Usuario'}
           </Button>
         </>
       }

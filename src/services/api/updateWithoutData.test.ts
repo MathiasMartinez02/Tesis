@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/config/env', () => ({ ENV: { ENABLE_MOCK_API: false, API_BASE_URL: '', API_TIMEOUT: 1000, JWT_STORAGE_KEY: 'k' } }));
 const { put, patch } = vi.hoisted(() => ({ put: vi.fn(), patch: vi.fn() }));
 vi.mock('@/lib/axios', () => ({ default: { put, patch } }));
 

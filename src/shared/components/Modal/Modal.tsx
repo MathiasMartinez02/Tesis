@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef, useId } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,10 @@ const sizeClasses = {
   full: 'max-w-[95vw]',
 };
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+// Dialogo modal accesible: foco atrapado, Escape para cerrar y foco restaurado al cerrar
 export function Modal({
   isOpen,
   onClose,
@@ -36,18 +40,38 @@ export function Modal({
   className,
 }: ModalProps): JSX.Element {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
-  // Focus management
+  // Foco inicial en el dialogo y vuelta al elemento que lo abrio al cerrar
   useEffect(() => {
-    if (isOpen) {
-      closeButtonRef.current?.focus();
-    }
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus();
+    return () => previouslyFocused?.focus();
   }, [isOpen]);
 
-  // Escape para cerrar
+  // Escape cierra y Tab queda dentro del dialogo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (!isOpen) return;
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !contentRef.current) return;
+      const focusable = contentRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -66,8 +90,8 @@ export function Modal({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           role="dialog"
           aria-modal
-          aria-labelledby={title ? 'modal-title' : undefined}
-          aria-describedby={description ? 'modal-description' : undefined}
+          aria-labelledby={title ? titleId : undefined}
+          aria-describedby={description ? descriptionId : undefined}
         >
           {/* Overlay */}
           <motion.div
@@ -82,6 +106,7 @@ export function Modal({
 
           {/* Contenido */}
           <motion.div
+            ref={contentRef}
             initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
@@ -98,7 +123,7 @@ export function Modal({
                 <div>
                   {title && (
                     <h2
-                      id="modal-title"
+                      id={titleId}
                       className="text-lg font-semibold text-surface-900 dark:text-white"
                     >
                       {title}
@@ -106,7 +131,7 @@ export function Modal({
                   )}
                   {description && (
                     <p
-                      id="modal-description"
+                      id={descriptionId}
                       className="mt-1 text-sm text-surface-500 dark:text-surface-400"
                     >
                       {description}

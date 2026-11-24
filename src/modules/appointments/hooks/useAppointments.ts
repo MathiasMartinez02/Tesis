@@ -32,7 +32,7 @@ export function useCreateAppointment() {
     mutationFn: (payload: CreateAppointmentPayload) => appointmentsService.create(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: APPOINTMENTS_QUERY_KEY });
-      addToast({ type: 'success', title: 'Turno creado', description: 'El turno se registró correctamente' });
+      addToast({ type: 'success', title: 'Turno registrado', description: 'El turno se registró correctamente' });
     },
     onError: (err: Error) => {
       addToast({ type: 'error', title: 'Error al crear el turno', description: err.message });
@@ -90,7 +90,7 @@ export function useConvertAppointmentToWorkOrder() {
       addToast({
         type: 'success',
         title: 'Turno convertido en OT',
-        description: `OT ${workOrder.number} creada correctamente`,
+        description: `OT ${workOrder.number} registrada correctamente`,
       });
     },
     onError: (err: Error) => {

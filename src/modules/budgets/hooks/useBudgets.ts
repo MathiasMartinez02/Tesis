@@ -13,15 +13,6 @@ export function useBudgets(filters: BudgetFilters = {}, page = 1, pageSize = 10)
   });
 }
 
-// Trae el detalle de un presupuesto puntual por id
-export function useBudget(id: string) {
-  return useQuery({
-    queryKey: [...BUDGETS_QUERY_KEY, id],
-    queryFn: () => budgetsService.getById(id),
-    enabled: !!id,
-  });
-}
-
 // Crea un presupuesto nuevo y refresca el listado, mostrando un toast de resultado
 export function useCreateBudget() {
   const queryClient = useQueryClient();
@@ -31,7 +22,7 @@ export function useCreateBudget() {
     mutationFn: (payload: CreateBudgetPayload) => budgetsService.create(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: BUDGETS_QUERY_KEY });
-      addToast({ type: 'success', title: 'Presupuesto creado', description: 'El presupuesto se registró correctamente' });
+      addToast({ type: 'success', title: 'Presupuesto registrado', description: 'El presupuesto se registró correctamente' });
     },
     onError: (err: Error) => {
       addToast({ type: 'error', title: 'Error al crear el presupuesto', description: err.message });

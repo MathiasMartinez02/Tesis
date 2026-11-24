@@ -88,7 +88,7 @@ export function AddBudgetModal({ isOpen, onClose }: AddBudgetModalProps): JSX.El
             isLoading={createBudget.isPending}
             leftIcon={<FileText size={15} />}
           >
-            Crear Presupuesto
+            Registrar Presupuesto
           </Button>
         </>
       }

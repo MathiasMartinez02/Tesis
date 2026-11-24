@@ -23,6 +23,7 @@ import type { Appointment, AppointmentFilters, AppointmentStatus, SelectOption, 
 import { formatDate } from '@/lib/utils';
 import { RoleGuard } from '@/routes/RoleGuard';
 import { APPOINTMENTS_MANAGE } from '@/lib/permissions';
+import { Pagination } from '@/shared/components/Pagination/Pagination';
 
 const EMPTY_FILTERS: AppointmentFilters = {};
 
@@ -236,25 +237,8 @@ export function AppointmentsListPage(): JSX.Element {
         stickyHeader
       />
 
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-surface-500">
-          <span>
-            Mostrando {(page - 1) * 10 + 1}–{Math.min(page * 10, data.total)} de {data.total}
-          </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page === data.totalPages}
-            >
-              Siguiente
-            </Button>
-          </div>
-        </div>
+      {data && (
+        <Pagination page={page} pageSize={10} total={data.total} totalPages={data.totalPages} onPageChange={setPage} />
       )}
     </motion.div>
   );

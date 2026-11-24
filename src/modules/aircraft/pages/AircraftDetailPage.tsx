@@ -31,13 +31,11 @@ import {
 } from '../hooks/useAircraft';
 import { AddFlightRecordModal } from '../components/AddFlightRecordModal';
 import { AddAircraftDocumentModal } from '../components/AddAircraftDocumentModal';
-import { ROUTES, buildRoute, WORK_ORDER_TYPE_LABELS } from '@/constants';
-import { formatDate, formatFlightHours, daysUntil } from '@/lib/utils';
+import { AIRCRAFT_CATEGORY_LABELS, ROUTES, buildRoute, WORK_ORDER_TYPE_LABELS } from '@/constants';
+import { formatDate, formatFlightHours, daysUntil, describeExpiry } from '@/lib/utils';
 import { RoleGuard } from '@/routes/RoleGuard';
 
-// MODIFICADO: agrega sección "Repuestos utilizados" con los items de inventory-usage de la aeronave
-// ANTERIOR: agregaba botón "Editar" en el header, sección "Historial de mantenimiento" con las OTs de la
-// aeronave y conectaba el botón "Subir documento" a un modal que crea documentos vía useAddAircraftDocument
+// Detalle de aeronave: datos, vuelos, mantenimiento, repuestos, vencimientos y documentos
 export function AircraftDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -148,9 +146,8 @@ export function AircraftDetailPage(): JSX.Element {
             <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-900/10">
               <AlertTriangle size={16} className="shrink-0 text-amber-600" />
               <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
-                {daysToInspection < 0
-                  ? `Inspección vencida hace ${Math.abs(daysToInspection)} días`
-                  : `Próxima inspección en ${daysToInspection} días (${formatDate(aircraft.nextInspectionDue!)})`}
+                {aircraft.nextInspectionDue &&
+                  `Próxima inspección: ${describeExpiry(aircraft.nextInspectionDue)} (${formatDate(aircraft.nextInspectionDue)})`}
               </p>
             </div>
           )}
@@ -158,7 +155,7 @@ export function AircraftDetailPage(): JSX.Element {
             <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-900/10">
               <AlertTriangle size={16} className="shrink-0 text-red-600" />
               <p className="text-sm font-medium text-red-800 dark:text-red-400">
-                Certificado de aeronavegabilidad vence en {daysToCertExpiry} días
+                Certificado de aeronavegabilidad: {describeExpiry(aircraft.certificateExpiry)}
               </p>
             </div>
           )}
@@ -193,7 +190,7 @@ export function AircraftDetailPage(): JSX.Element {
                 </div>
                 <div>
                   <dt className="font-semibold text-surface-400 text-xs uppercase tracking-wide">Categoría</dt>
-                  <dd className="mt-1 text-surface-700 dark:text-surface-300">{aircraft.category}</dd>
+                  <dd className="mt-1 text-surface-700 dark:text-surface-300">{AIRCRAFT_CATEGORY_LABELS[aircraft.category]}</dd>
                 </div>
                 <div>
                   <dt className="font-semibold text-surface-400 text-xs uppercase tracking-wide">Cliente</dt>

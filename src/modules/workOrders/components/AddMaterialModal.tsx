@@ -13,7 +13,7 @@ interface AddMaterialModalProps {
   workOrderId: string;
 }
 
-// Modal para pedir un material/repuesto nuevo para una OT (Fase 8: WorkOrderMaterial no tenia UI ni endpoint)
+// Modal para pedir un material o repuesto para una OT
 export function AddMaterialModal({ isOpen, onClose, workOrderId }: AddMaterialModalProps): JSX.Element {
   const { mutate: addMaterial, isPending } = useAddWorkOrderMaterial();
 

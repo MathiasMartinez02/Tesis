@@ -74,7 +74,7 @@ export function Sidebar(): JSX.Element {
       {/* Toggle collapse — flotante en el borde derecho, solo desktop */}
       <button
         onClick={toggleSidebar}
-        aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+        aria-label={collapsed ? 'Expandir menú lateral' : 'Contraer menú lateral'}
         className="absolute -right-3 top-[68px] z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-surface-600 bg-surface-800 text-surface-400 shadow-md transition-colors hover:bg-surface-700 hover:text-white lg:flex"
       >
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}

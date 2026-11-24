@@ -1,5 +1,8 @@
-import { AlertTriangle, Clock, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, Clock } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
+import { clickableProps } from '@/lib/a11y';
+import { ROUTES, buildRoute } from '@/constants';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import type { UpcomingExpiry } from '@/types';
 
@@ -42,7 +45,18 @@ function getDaysLabel(days: number): string {
   return `${days} días`;
 }
 
+// Pantalla donde se gestiona cada tipo de vencimiento
+function expiryRoute(item: UpcomingExpiry): string | null {
+  if (item.type === 'certificado') return buildRoute(ROUTES.AIRCRAFT_DETAIL, { id: item.id });
+  if (item.type === 'inspeccion') return buildRoute(ROUTES.INSPECTION_DETAIL, { id: item.id });
+  if (item.type === 'licencia') return ROUTES.SETTINGS_USERS;
+  return null;
+}
+
+// Proximos vencimientos del dashboard; cada uno abre la pantalla donde se resuelve
 export function UpcomingExpiries({ expiries }: UpcomingExpiriesProps): JSX.Element {
+  const navigate = useNavigate();
+
   return (
     <Card padding="none">
       <div className="p-5">
@@ -51,9 +65,6 @@ export function UpcomingExpiries({ expiries }: UpcomingExpiriesProps): JSX.Eleme
             <AlertTriangle size={16} className="text-amber-500" aria-hidden />
             <CardTitle>Próximos Vencimientos</CardTitle>
           </div>
-          <button className="flex items-center gap-1 text-xs font-medium text-aviation-600 hover:text-aviation-700">
-            Ver todos <ChevronRight size={13} />
-          </button>
         </CardHeader>
 
         <CardBody>
@@ -61,11 +72,14 @@ export function UpcomingExpiries({ expiries }: UpcomingExpiriesProps): JSX.Eleme
             {expiries.map((item) => {
               const priorityKey = item.priority as keyof typeof PRIORITY_STYLES;
               const styles = PRIORITY_STYLES[priorityKey] ?? PRIORITY_STYLES.normal;
+              const route = expiryRoute(item);
               return (
                 <div
                   key={item.id}
+                  {...(route ? clickableProps(() => navigate(route)) : {})}
                   className={cn(
-                    'flex items-center gap-3 rounded-r-lg border-l-2 px-3 py-2.5 transition-colors hover:opacity-90',
+                    'flex items-center gap-3 rounded-r-lg border-l-2 px-3 py-2.5 outline-none transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-aviation-500',
+                    route && 'cursor-pointer',
                     styles.row
                   )}
                 >

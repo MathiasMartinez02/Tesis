@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { PageHeader } from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardBody } from '@/shared/components/ui/Card';
 import { Spinner } from '@/shared/components/ui/Spinner';
 import { Modal } from '@/shared/components/Modal/Modal';
@@ -18,6 +19,8 @@ import {
   useMonthlyWorkshopHours,
 } from '../hooks/useReports';
 import { formatCurrency, formatDate, downloadCsv, todayLocal } from '@/lib/utils';
+import { clickableProps } from '@/lib/a11y';
+import { endOfMonth, format, parseISO } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
   Operativa: '#10b981',
@@ -71,15 +74,27 @@ function exportInventoryReportToCsv(items: { partNumber: string; description: st
   downloadCsv(`inventario-panol-${todayLocal()}.csv`, headers, rows);
 }
 
-// MODIFICADO: se conectan las 4 tarjetas de reportes a sus hooks reales (useWorkOrdersReport, useInspectionsReport, useAircraftStatusReport, useInventoryReport),
-// cada una abre un modal con datos reales y un botón "Exportar CSV" (en vez de PDF, ver decisión de alcance documentada en PLAN_ANALISIS_FUNCIONAL.md). Se reemplaza
-// el gráfico de horas por mes (hardcodeado) por datos reales de useMonthlyWorkshopHours, y se agrega el indicador de cumplimiento normativo.
-// ANTERIOR: solo la tarjeta "Inventario Pañol" estaba conectada (a un modal); "Informe Mensual ANAC", "Resumen de Inspecciones" y "Estado de Flota" tenían un botón
-// "Exportar PDF" sin onClick; el gráfico de horas usaba un array `lineData` fijo en el código; no existía indicador de cumplimiento normativo.
+// Estado de un informe que todavia no tiene datos: cargando o sin acceso
+function ReportStatus({ isLoading }: { isLoading: boolean }): JSX.Element {
+  return (
+    <div className="flex h-32 items-center justify-center text-center text-sm text-surface-500">
+      {isLoading ? <Spinner size="md" /> : 'No se pudo cargar el informe. Verificá tu conexión o tus permisos.'}
+    </div>
+  );
+}
+
+// Primer y ultimo dia (yyyy-MM-dd) de un mes yyyy-MM
+function monthRange(month: string): { dateFrom: string; dateTo: string } {
+  const first = parseISO(`${month}-01`);
+  return { dateFrom: format(first, 'yyyy-MM-dd'), dateTo: format(endOfMonth(first), 'yyyy-MM-dd') };
+}
+
+// Panel de reportes con informes exportables e indicadores
 export function ReportsPage(): JSX.Element {
   const { data: aircraftReport, isLoading: isLoadingAircraft } = useAircraftStatusReport();
   const { data: inventoryReport, isLoading: isLoadingInventoryReport } = useInventoryReport();
-  const { data: workOrdersReport, isLoading: isLoadingWorkOrdersReport } = useWorkOrdersReport();
+  const [reportMonth, setReportMonth] = useState(todayLocal().slice(0, 7));
+  const { data: workOrdersReport, isLoading: isLoadingWorkOrdersReport } = useWorkOrdersReport(monthRange(reportMonth));
   const { data: inspectionsReport, isLoading: isLoadingInspectionsReport } = useInspectionsReport();
   const { data: monthlyHours, isLoading: isLoadingMonthlyHours } = useMonthlyWorkshopHours();
 
@@ -117,7 +132,7 @@ export function ReportsPage(): JSX.Element {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.15 }}>
-            <Card hover className="h-full cursor-pointer" onClick={() => setIsWorkOrdersReportOpen(true)}>
+            <Card hover className="h-full cursor-pointer" {...clickableProps(() => setIsWorkOrdersReportOpen(true))}>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-aviation-50 mb-3">
                 <FileText size={18} className="text-aviation-600" />
               </div>
@@ -139,7 +154,7 @@ export function ReportsPage(): JSX.Element {
           </motion.div>
 
           <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.15 }}>
-            <Card hover className="h-full cursor-pointer" onClick={() => setIsInspectionsReportOpen(true)}>
+            <Card hover className="h-full cursor-pointer" {...clickableProps(() => setIsInspectionsReportOpen(true))}>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-aviation-50 mb-3">
                 <BarChart3 size={18} className="text-aviation-600" />
               </div>
@@ -161,7 +176,7 @@ export function ReportsPage(): JSX.Element {
           </motion.div>
 
           <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.15 }}>
-            <Card hover className="h-full cursor-pointer" onClick={() => setIsAircraftReportOpen(true)}>
+            <Card hover className="h-full cursor-pointer" {...clickableProps(() => setIsAircraftReportOpen(true))}>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-aviation-50 mb-3">
                 <TrendingUp size={18} className="text-aviation-600" />
               </div>
@@ -183,7 +198,7 @@ export function ReportsPage(): JSX.Element {
           </motion.div>
 
           <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.15 }}>
-            <Card hover className="h-full cursor-pointer" onClick={() => setIsInventoryReportOpen(true)}>
+            <Card hover className="h-full cursor-pointer" {...clickableProps(() => setIsInventoryReportOpen(true))}>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-aviation-50 mb-3">
                 <PieChart size={18} className="text-aviation-600" />
               </div>
@@ -316,12 +331,19 @@ export function ReportsPage(): JSX.Element {
         isOpen={isWorkOrdersReportOpen}
         onClose={() => setIsWorkOrdersReportOpen(false)}
         title="Informe Mensual ANAC"
-        description="Resumen de órdenes de trabajo de los últimos 3 meses"
+        description="Órdenes de trabajo ingresadas en el mes seleccionado"
       >
-        {isLoadingWorkOrdersReport || !workOrdersReport ? (
-          <div className="flex h-32 items-center justify-center">
-            <Spinner size="md" />
-          </div>
+        <div className="mb-4 max-w-xs">
+          <Input
+            type="month"
+            label="Mes"
+            value={reportMonth}
+            max={todayLocal().slice(0, 7)}
+            onChange={(e) => e.target.value && setReportMonth(e.target.value)}
+          />
+        </div>
+        {!workOrdersReport ? (
+          <ReportStatus isLoading={isLoadingWorkOrdersReport} />
         ) : (
           <div className="space-y-4">
             <dl className="grid gap-4 sm:grid-cols-2">
@@ -355,10 +377,8 @@ export function ReportsPage(): JSX.Element {
         title="Resumen de Inspecciones"
         description="Inspecciones programadas en los últimos 3 meses"
       >
-        {isLoadingInspectionsReport || !inspectionsReport ? (
-          <div className="flex h-32 items-center justify-center">
-            <Spinner size="md" />
-          </div>
+        {!inspectionsReport ? (
+          <ReportStatus isLoading={isLoadingInspectionsReport} />
         ) : (
           <div className="space-y-4">
             <dl className="grid gap-4 sm:grid-cols-2">
@@ -402,10 +422,8 @@ export function ReportsPage(): JSX.Element {
         title="Estado de Flota"
         description="Estado actual de todas las aeronaves en el sistema"
       >
-        {isLoadingAircraft || !aircraftReport ? (
-          <div className="flex h-32 items-center justify-center">
-            <Spinner size="md" />
-          </div>
+        {!aircraftReport ? (
+          <ReportStatus isLoading={isLoadingAircraft} />
         ) : (
           <div className="space-y-4">
             <dl className="grid gap-4 sm:grid-cols-2">
@@ -437,10 +455,8 @@ export function ReportsPage(): JSX.Element {
         title="Inventario Pañol"
         description="Resumen del stock y valorización actual del pañol"
       >
-        {isLoadingInventoryReport || !inventoryReport ? (
-          <div className="flex h-32 items-center justify-center">
-            <Spinner size="md" />
-          </div>
+        {!inventoryReport ? (
+          <ReportStatus isLoading={isLoadingInventoryReport} />
         ) : (
           <div className="space-y-4">
             <dl className="grid gap-4 sm:grid-cols-2">

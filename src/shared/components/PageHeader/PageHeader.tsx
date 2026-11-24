@@ -10,7 +10,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions, className }: PageHeaderProps): JSX.Element {
   return (
-    <div className={cn('mb-6 flex items-start justify-between gap-4', className)}>
+    <div className={cn('mb-6 flex flex-wrap items-start justify-between gap-4', className)}>
       <div>
         <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white lg:text-2xl">
           {title}
@@ -19,7 +19,7 @@ export function PageHeader({ title, description, actions, className }: PageHeade
           <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">{description}</p>
         )}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
